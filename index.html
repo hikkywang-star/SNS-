@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>小狸日語 SNS 空白編輯器</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* ── Blue Palette ── */
+            --blue-vivid:   #2563EB;
+            --blue-bright:  #3B82F6;
+            --blue-soft:    #60A5FA;
+            --blue-pale:    #DBEAFE;
+            --blue-ghost:   #EFF6FF;
+            --cyan:         #06B6D4;
+            --cyan-pale:    #CFFAFE;
+            --indigo:       #4F46E5;
+
+            /* ── Neutrals ── */
+            --ink:          #0B1120;
+            --ink-2:        #1E2F50;
+            --ink-3:        #64748B;
+            --white:        #FFFFFF;
+            --bg:           #F0F5FF;
+            --surface:      #FFFFFF;
+            --surface-2:    #F4F7FF;
+            --border:       #DBEAFE;
+            --border-2:     #E2E8F0;
+
+            /* ── Status ── */
+            --safe-bg:      #ECFDF5; --safe-fg:    #059669;
+            --warn-bg:      #FFFBEB; --warn-fg:    #D97706;
+            --danger-bg:    #FEF2F2; --danger-fg:  #DC2626;
+
+            /* ── Effects ── */
+            --grad:         linear-gradient(135deg, #2563EB 0%, #06B6D4 100%);
+            --grad-soft:    linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%);
+            --shadow-blue:  rgba(37,99,235,0.18);
+            --shadow-sm:    0 2px 10px var(--shadow-blue);
+            --shadow-md:    0 8px 28px var(--shadow-blue);
+            --shadow-lg:    0 24px 60px rgba(37,99,235,0.2);
+
+            --r-sm: 8px; --r-md: 14px; --r-lg: 22px; --r-xl: 30px;
+            --ease: cubic-bezier(0.4,0,0.2,1);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif;
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse 70% 50% at 15% -5%, rgba(37,99,235,0.10), transparent),
+                radial-gradient(ellipse 60% 45% at 85% 105%, rgba(6,182,212,0.12), transparent);
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 36px 16px 72px;
+            color: var(--ink);
+        }
+
+        /* ══════════════════════════════
+           CARD
+        ══════════════════════════════ */
+        .card {
+            width: 100%;
+            max-width: 620px;
+            background: var(--surface);
+            border-radius: var(--r-xl);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            animation: popIn 0.55s cubic-bezier(0.16,1,0.3,1) both;
+        }
+
+        @keyframes popIn {
+            from { opacity:0; transform: scale(0.96) translateY(20px); }
+            to   { opacity:1; transform: scale(1)    translateY(0); }
+        }
+
+        /* ══════════════════════════════
+           HEADER
+        ══════════════════════════════ */
+        .card-header {
+            background: var(--white);
+            padding: 26px 30px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1.5px solid var(--border);
+        }
+
+        .header-left { display: flex; align-items: center; gap: 16px; }
+
+        .logo-mark {
+            width: 48px; height: 48px;
+            background: var(--grad);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.35rem;
+            flex-shrink: 0;
+            box-shadow: 0 6px 20px rgba(37,99,235,0.35);
+        }
+
+        .title-block { display: flex; flex-direction: column; gap: 3px; }
+
+        .title-main {
+            font-family: 'Playfair Display', 'Noto Serif TC', serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+        }
+
+        .title-main span {
+            background: var(--grad-soft);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .title-sub {
+            font-size: 0.71rem;
+            color: var(--ink-3);
+            font-weight: 400;
+            letter-spacing: 0.07em;
+        }
+
+        .ver-badge {
+            background: var(--blue-ghost);
+            color: var(--blue-vivid);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 30px;
+            border: 1.5px solid var(--blue-pale);
+            letter-spacing: 0.04em;
+            flex-shrink: 0;
+        }
+
+        /* ══════════════════════════════
+           BODY
+        ══════════════════════════════ */
+        .card-body { padding: 26px 28px 30px; }
+
+        /* ── Undo / Redo ── */
+        .undo-row {
+            display: flex; gap: 8px;
+            margin-bottom: 22px;
+        }
+
+        .undo-btn {
+            flex: 1;
+            padding: 10px;
+            background: var(--surface-2);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-md);
+            color: var(--ink-2);
+            font-size: 0.84rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.18s var(--ease);
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+
+        .undo-btn:hover {
+            background: var(--blue-ghost);
+            border-color: var(--blue-bright);
+            color: var(--blue-vivid);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-2px);
+        }
+        .undo-btn:active { transform: scale(0.97); }
+
+        /* ── Label Row ── */
+        .label-row {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .label-left {
+            display: flex; align-items: center; gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .label-dot {
+            width: 8px; height: 8px;
+            background: var(--grad-soft);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .label-text {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--ink-2);
+            letter-spacing: 0.04em;
+        }
+
+        .label-tip {
+            font-size: 0.71rem;
+            color: var(--ink-3);
+            font-weight: 400;
+        }
+
+        .label-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+        .save-dot {
+            font-size: 0.72rem;
+            color: var(--ink-3);
+            opacity: 0;
+            transition: opacity 0.3s;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .save-dot::before {
+            content: '';
+            display: inline-block;
+            width: 6px; height: 6px;
+            background: #4ADE80;
+            border-radius: 50%;
+        }
+        .save-dot.visible { opacity: 1; }
+
+        .char-pill {
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 30px;
+            background: var(--safe-bg);
+            color: var(--safe-fg);
+            border: 1.5px solid #A7F3D0;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+        .char-pill.warning { background: var(--warn-bg); color: var(--warn-fg); border-color: #FDE68A; animation: pulse 1.8s infinite; }
+        .char-pill.danger  { background: var(--danger-bg); color: var(--danger-fg); border-color: #FECACA; animation: pulse 1.2s infinite; }
+
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.65} }
+
+        /* ══════════════════════════════
+           EMOJI PANEL
+        ══════════════════════════════ */
+        .emoji-panel { margin-bottom: 12px; }
+
+        .emoji-toggle-btn {
+            width: 100%;
+            background: var(--surface-2);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-md);
+            padding: 9px 14px;
+            display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.18s var(--ease);
+        }
+        .emoji-toggle-btn:hover { border-color: var(--blue-bright); background: var(--blue-ghost); }
+
+        .emoji-toggle-label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--ink-2);
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .emoji-arrow {
+            font-size: 0.68rem;
+            color: var(--ink-3);
+            transition: transform 0.25s;
+        }
+
+        .emoji-toggle-btn.open {
+            border-radius: var(--r-md) var(--r-md) 0 0;
+            border-color: var(--blue-vivid);
+            background: var(--blue-ghost);
+        }
+        .emoji-toggle-btn.open .emoji-arrow { transform: rotate(180deg); }
+
+        .emoji-body {
+            display: none;
+            flex-direction: column;
+            gap: 7px;
+            padding: 12px 10px;
+            border: 1.5px solid var(--blue-vivid);
+            border-top: none;
+            border-radius: 0 0 var(--r-md) var(--r-md);
+            background: var(--white);
+        }
+        .emoji-body.open { display: flex; }
+
+        .emoji-row {
+            display: flex; gap: 5px;
+            overflow-x: auto; padding-bottom: 2px;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .emoji-row::-webkit-scrollbar { display: none; }
+
+        .emoji-btn {
+            background: var(--surface-2);
+            border: 1.5px solid transparent;
+            border-radius: var(--r-sm);
+            font-size: 1.2rem;
+            padding: 5px 0;
+            cursor: pointer;
+            transition: all 0.15s;
+            flex: 1 0 auto;
+            min-width: 36px; max-width: 50px;
+            text-align: center;
+            user-select: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+        }
+        .emoji-btn:hover {
+            background: var(--blue-ghost);
+            border-color: var(--blue-bright);
+            transform: scale(1.15) translateY(-2px);
+            box-shadow: 0 5px 14px rgba(37,99,235,0.2);
+        }
+        .emoji-btn:active { transform: scale(0.9); }
+
+        /* ══════════════════════════════
+           TOOLBAR
+        ══════════════════════════════ */
+        .toolbar-wrapper {
+            overflow-x: auto;
+            white-space: nowrap;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .toolbar-wrapper::-webkit-scrollbar { display: none; }
+
+        .toolbar {
+            display: inline-flex;
+            gap: 6px;
+        }
+
+        .tb-group {
+            display: inline-flex;
+            background: var(--surface-2);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-md);
+            padding: 4px;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+
+        .tb-btn {
+            background: transparent;
+            border: none;
+            border-radius: var(--r-sm);
+            color: var(--ink-2);
+            padding: 6px 11px;
+            font-size: 0.83rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s var(--ease);
+            white-space: nowrap;
+            display: inline-flex; align-items: center; gap: 4px;
+        }
+
+        .tb-btn:hover {
+            background: var(--white);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-1px);
+        }
+        .tb-btn:active { transform: scale(0.94); box-shadow: none; }
+
+        /* colour variants */
+        .tb-btn.c-blue   { color: var(--blue-vivid); }
+        .tb-btn.c-blue:hover   { background: var(--blue-ghost); }
+
+        .tb-btn.c-cyan   { color: #0E7490; }
+        .tb-btn.c-cyan:hover   { background: var(--cyan-pale); }
+
+        .tb-btn.c-indigo { color: var(--indigo); }
+        .tb-btn.c-indigo:hover { background: #EEF2FF; }
+
+        .tb-div {
+            width: 1px;
+            background: var(--border);
+            margin: 4px 1px;
+            align-self: stretch;
+        }
+
+        /* ══════════════════════════════
+           EDITOR
+        ══════════════════════════════ */
+        .editor-wrap {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            border: 2px solid var(--border);
+            border-radius: var(--r-lg);
+            background: var(--surface-2);
+            overflow: hidden;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            margin-bottom: 14px;
+        }
+
+        .editor-wrap:focus-within {
+            border-color: var(--blue-bright);
+            background: var(--white);
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.15), var(--shadow-sm);
+        }
+
+        .editor-backdrop, .editor-textarea {
+            position: absolute; top:0; left:0;
+            width:100%; height:100%;
+            padding: 18px 20px;
+            font-size: 16px;
+            line-height: 1.75;
+            font-family: inherit;
+            border: none; overflow: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            box-sizing: border-box;
+            border-radius: var(--r-lg);
+        }
+
+        .editor-backdrop {
+            z-index: 1; color: transparent;
+            background: transparent; pointer-events: none;
+        }
+
+        mark.danger-zone {
+            background: rgba(220,38,38,0.15);
+            color: transparent;
+            border-radius: 4px;
+        }
+
+        .editor-textarea {
+            z-index: 2; color: var(--ink);
+            background: transparent; resize: none; outline: none;
+        }
+
+        .editor-textarea::placeholder { color: #BFDBFE; }
+        .editor-textarea::-webkit-scrollbar { width: 5px; }
+        .editor-textarea::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+        /* ══════════════════════════════
+           BOTTOM BUTTONS
+        ══════════════════════════════ */
+        .action-row {
+            display: flex; gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: var(--r-md);
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.18s var(--ease);
+            display: flex; align-items: center; justify-content: center; gap: 7px;
+            padding: 12px 18px;
+        }
+        .btn:active { transform: scale(0.97); }
+
+        .btn-outline {
+            background: var(--white);
+            border: 1.5px solid var(--border);
+            color: var(--ink-2);
+            flex: 1;
+        }
+        .btn-outline:hover {
+            border-color: var(--blue-bright);
+            color: var(--blue-vivid);
+            background: var(--blue-ghost);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-icon-only {
+            background: var(--white);
+            border: 1.5px solid var(--border);
+            color: var(--ink-3);
+            width: 46px; flex-shrink: 0;
+            font-size: 1.1rem;
+            padding: 0;
+        }
+        .btn-icon-only:hover {
+            border-color: #FECACA;
+            color: var(--danger-fg);
+            background: var(--danger-bg);
+        }
+
+        /* CTA — 主按鈕 */
+        .btn-cta {
+            width: 100%;
+            padding: 17px;
+            background: var(--grad);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: var(--r-lg);
+            letter-spacing: 0.04em;
+            box-shadow: 0 8px 28px rgba(37,99,235,0.38);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* shimmer sweep on hover */
+        .btn-cta::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 55%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        .btn-cta:hover {
+            box-shadow: 0 12px 36px rgba(37,99,235,0.48);
+            transform: translateY(-2px);
+        }
+        .btn-cta:hover::after { left: 160%; }
+
+        /* ══════════════════════════════
+           SETTINGS
+        ══════════════════════════════ */
+        .settings-trigger {
+            width: 100%;
+            background: none;
+            border: none;
+            border-top: 1.5px dashed var(--border);
+            padding: 16px 0 0;
+            margin-top: 18px;
+            cursor: pointer;
+            font-family: inherit;
+            color: var(--ink-3);
+            font-size: 0.82rem;
+            font-weight: 600;
+            display: flex; align-items: center; gap: 8px;
+            letter-spacing: 0.04em;
+            transition: color 0.2s;
+        }
+        .settings-trigger:hover { color: var(--blue-vivid); }
+        .settings-trigger .s-arr { margin-left: auto; font-size: 0.68rem; transition: transform 0.25s; }
+        .settings-trigger.open { color: var(--blue-vivid); }
+        .settings-trigger.open .s-arr { transform: rotate(180deg); }
+
+        .settings-body { display: none; margin-top: 16px; flex-direction: column; gap: 14px; }
+        .settings-body.open { display: flex; }
+
+        .setting-label {
+            font-size: 0.73rem;
+            font-weight: 700;
+            color: var(--ink-3);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 7px;
+            display: block;
+        }
+
+        .setting-textarea {
+            width: 100%;
+            height: 90px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-md);
+            background: var(--surface-2);
+            color: var(--ink-2);
+            font-size: 12.5px;
+            font-family: inherit;
+            line-height: 1.65;
+            padding: 10px 12px;
+            resize: vertical; outline: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .setting-textarea:focus {
+            border-color: var(--blue-bright);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+        }
+
+        /* ══════════════════════════════
+           TOAST
+        ══════════════════════════════ */
+        #toast {
+            position: fixed;
+            bottom: 28px; left: 50%;
+            transform: translateX(-50%) translateY(16px);
+            background: var(--ink);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 12px 36px rgba(11,17,32,0.3);
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.3s cubic-bezier(0.68,-0.55,0.27,1.55),
+                        transform 0.3s cubic-bezier(0.68,-0.55,0.27,1.55);
+            z-index: 999;
+            display: flex; align-items: center; gap: 10px;
+            white-space: nowrap;
+            border-top: 2px solid var(--cyan);
+        }
+        #toast::before {
+            content: '';
+            width: 8px; height: 8px;
+            background: var(--grad-soft);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        #toast.show { opacity:1; visibility:visible; transform: translateX(-50%) translateY(0); }
+
+        /* ══════════════════════════════
+           RESPONSIVE
+        ══════════════════════════════ */
+        @media (max-width: 480px) {
+            .card-body { padding: 18px 16px 22px; }
+            .card-header { padding: 18px 18px 16px; }
+            .title-main { font-size: 1rem; }
+            .btn-cta { font-size: 0.95rem; padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+
+    <!-- ══ HEADER ══ -->
+    <div class="card-header">
+        <div class="header-left">
+            <div class="logo-mark">✦</div>
+            <div class="title-block">
+                <div class="title-main">小狸日語 <span>SNS 編輯器</span></div>
+                <div class="title-sub">Kori Japanese · SNS Blank Editor</div>
+            </div>
+        </div>
+        <div class="ver-badge">Ver. 2.1</div>
+    </div>
+
+    <!-- ══ BODY ══ -->
+    <div class="card-body">
+
+        <!-- Undo / Redo -->
+        <div class="undo-row">
+            <button class="undo-btn" onclick="undo()">↩️ 復原 Undo</button>
+            <button class="undo-btn" onclick="redo()">↪️ 重做 Redo</button>
+        </div>
+
+        <!-- Label Row -->
+        <div class="label-row">
+            <div class="label-left">
+                <div class="label-dot"></div>
+                <span class="label-text">貼文內容</span>
+                <span class="label-tip">Enter=大空行 · Shift+Enter=換行</span>
+            </div>
+            <div class="label-right">
+                <span id="saveStatus" class="save-dot">已暫存</span>
+                <span id="charCounter" class="char-pill">Threads 500</span>
+            </div>
+        </div>
+
+        <!-- Emoji Panel -->
+        <div class="emoji-panel">
+            <button class="emoji-toggle-btn" id="emojiBtn" onclick="toggleEmoji()">
+                <span class="emoji-toggle-label">😀 常用表情符號庫</span>
+                <span class="emoji-arrow">▼</span>
+            </button>
+            <div class="emoji-body" id="emojiBody">
+                <div class="emoji-row">
+                    <div class="emoji-btn" onclick="insertEmoji('👇')">👇</div>
+                    <div class="emoji-btn" onclick="insertEmoji('⬇️')">⬇️</div>
+                    <div class="emoji-btn" onclick="insertEmoji('👉')">👉</div>
+                    <div class="emoji-btn" onclick="insertEmoji('➡️')">➡️</div>
+                    <div class="emoji-btn" onclick="insertEmoji('➡︎')">➡︎</div>
+                    <div class="emoji-btn" onclick="insertEmoji('➦')">➦</div>
+                    <div class="emoji-btn" onclick="insertEmoji('➤')">➤</div>
+                    <div class="emoji-btn" onclick="insertEmoji('⤴︎')">⤴︎</div>
+                    <div class="emoji-btn" onclick="insertEmoji('⤵︎')">⤵︎</div>
+                    <div class="emoji-btn" onclick="insertEmoji('❇️')">❇️</div>
+                    <div class="emoji-btn" onclick="insertEmoji('✳️')">✳️</div>
+                </div>
+                <div class="emoji-row">
+                    <div class="emoji-btn" onclick="insertEmoji('★')">★</div>
+                    <div class="emoji-btn" onclick="insertEmoji('⭐️')">⭐️</div>
+                    <div class="emoji-btn" onclick="insertEmoji('✪')">✪</div>
+                    <div class="emoji-btn" onclick="insertEmoji('❖')">❖</div>
+                    <div class="emoji-btn" onclick="insertEmoji('♦️')">♦️</div>
+                    <div class="emoji-btn" onclick="insertEmoji('♦︎')">♦︎</div>
+                    <div class="emoji-btn" onclick="insertEmoji('🔸')">🔸</div>
+                    <div class="emoji-btn" onclick="insertEmoji('🔶')">🔶</div>
+                    <div class="emoji-btn" onclick="insertEmoji('❤️')">❤️</div>
+                    <div class="emoji-btn" onclick="insertEmoji('💚')">💚</div>
+                    <div class="emoji-btn" onclick="insertEmoji('💜')">💜</div>
+                </div>
+                <div class="emoji-row">
+                    <div class="emoji-btn" onclick="insertEmoji('💓')">💓</div>
+                    <div class="emoji-btn" onclick="insertEmoji('🥰')">🥰</div>
+                    <div class="emoji-btn" onclick="insertEmoji('😘')">😘</div>
+                    <div class="emoji-btn" onclick="insertEmoji('😂')">😂</div>
+                    <div class="emoji-btn" onclick="insertEmoji('💪')">💪</div>
+                    <div class="emoji-btn" onclick="insertEmoji('🌹')">🌹</div>
+                    <div class="emoji-btn" onclick="insertEmoji('💎')">💎</div>
+                    <div class="emoji-btn" onclick="insertEmoji('🎈')">🎈</div>
+                    <div class="emoji-btn" onclick="insertEmoji('🟥')">🟥</div>
+                    <div class="emoji-btn" onclick="insertEmoji('🟦')">🟦</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toolbar — horizontal scroll on mobile -->
+        <div class="toolbar-wrapper">
+            <div class="toolbar">
+                <!-- Structure -->
+                <div class="tb-group">
+                    <button class="tb-btn c-blue" onclick="insertTitlePrefix()">▍標題</button>
+                    <div class="tb-div"></div>
+                    <button class="tb-btn" onclick="toggleJapaneseQuotes()">「 」</button>
+                    <button class="tb-btn" onclick="toggleBrackets()">【 】</button>
+                    <button class="tb-btn" onclick="toggleCurlyQuotes()" style="font-family:Georgia,serif;">" "</button>
+                </div>
+                <!-- Hashtag -->
+                <div class="tb-group">
+                    <button class="tb-btn c-cyan" onclick="insertSingleHash()">#</button>
+                    <div class="tb-div"></div>
+                    <button class="tb-btn c-cyan" onclick="insertHashtags()">＃ 標籤</button>
+                </div>
+                <!-- Font -->
+                <div class="tb-group">
+                    <button class="tb-btn c-indigo" onclick="toggleStyle('bold')" style="font-family:Georgia,serif;">𝐁 粗體</button>
+                    <div class="tb-div"></div>
+                    <button class="tb-btn c-indigo" onclick="toggleStyle('italic')" style="font-family:Georgia,serif;">𝐼 斜體</button>
+                    <div class="tb-div"></div>
+                    <button class="tb-btn c-indigo" onclick="toggleStyle('mono')">𝙼 打字機</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Editor -->
+        <div class="editor-wrap">
+            <div id="backdrop" class="editor-backdrop"></div>
+            <textarea id="mainInput" class="editor-textarea" placeholder="在此輸入文章，超過 500 字背景會變紅..."></textarea>
+        </div>
+
+        <!-- Secondary Actions -->
+        <div class="action-row">
+            <button class="btn btn-outline" onclick="insertSignature()">⬇️ 插入著作簽名檔</button>
+            <button class="btn btn-icon-only" onclick="clearText()" title="清空">🗑️</button>
+        </div>
+
+        <!-- CTA -->
+        <button class="btn btn-cta" onclick="convertAndCopy()">
+            ✦ 一鍵轉換　＋　複製到剪貼簿
+        </button>
+
+        <!-- Settings -->
+        <button class="settings-trigger" id="settingsBtn" onclick="toggleSettings()">
+            ⚙️ 設定簽名檔與標籤
+            <span class="s-arr">▼</span>
+        </button>
+
+        <div class="settings-body" id="settingsBody">
+            <div>
+                <label class="setting-label">著作簽名檔內容</label>
+                <textarea id="signatureInput" class="setting-textarea">
+＿＿＿＿＿＿
+
+❤️ 感謝支持❤️
+
+❇️ 聽力一本到位👉《小狸日語新日檢N3聽力高分合格攻略》
+
+✿ 要學五十音👉《日語50音完全自學手冊》
+
+✿ 要打好N5-N3的重要日語文法👉《小狸日語觀念文法書》
+
+✿ 要學習如何自學提升口語例👉Pressplay 搜尋「沈浸式日語口說訓練課」
+
+🩸 要和小狸老師每週一起提升日語口語力👉2026年真人課程ー「50音後的第一堂口說＋聽力訓練課」</textarea>
+            </div>
+            <div>
+                <label class="setting-label">常用 Hashtag</label>
+                <textarea id="hashtagInput" class="setting-textarea">
+#小狸日語 #日語學習 #日文教學 #日本語勉強 #日檢 #JLPT #N3 #N2 #N4 #N5 #日語口說 #日語文法</textarea>
+            </div>
+        </div>
+
+    </div><!-- /card-body -->
+</div><!-- /card -->
+
+<div id="toast">已轉換並複製成功！請至 SNS 平台貼上 ✅</div>
+
+<!-- ════════════════════════════════════════
+     JAVASCRIPT  (Ver 2.1 logic, full merge)
+════════════════════════════════════════ -->
+<script>
+    const mainInput      = document.getElementById('mainInput');
+    const backdrop       = document.getElementById('backdrop');
+    const signatureInput = document.getElementById('signatureInput');
+    const hashtagInput   = document.getElementById('hashtagInput');
+    const toast          = document.getElementById('toast');
+    const saveStatus     = document.getElementById('saveStatus');
+    const charCounter    = document.getElementById('charCounter');
+
+    let historyStack = [], historyIndex = -1;
+    const maxHistory = 50, MAX_CHARS = 500;
+
+    /* ── Font maps (from Ver 2.1) ── */
+    const normalMap = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const boldMap   = "𝐀𝐁𝐂𝐃𝐄𝐅𝐆𝐇𝐈𝐉𝐊𝐋𝐌𝐍𝐎𝐏𝐐𝐑𝐒𝐓𝐔𝐕𝐖𝐗𝐘𝐙𝐚𝐛𝐜𝐝𝐞𝐟𝐠𝐡𝐢𝐣𝐤𝐥𝐦𝐧𝐨𝐩𝐪𝐫𝐬𝐭𝐮𝐯𝐰𝐱𝐲𝐳𝟎𝟏𝟐𝟑𝟒𝟓𝟔𝟕𝟖𝟗";
+    const italicMap = "𝐴𝐵𝐶𝐷𝐸𝐹𝐺𝐻𝐼𝐽𝐾𝐿𝑀𝑁𝑂𝑃𝑄𝑅𝑆𝑇𝑈𝑉𝑊𝑋𝑌𝑍𝑎𝑏𝑐𝑑𝑒𝑓𝑔ℎ𝑖𝑗𝑘𝑙𝑚𝑛𝑜𝑝𝑞𝑟𝑠𝑡𝑢𝑣𝑤𝑥𝑦𝑧0123456789";
+    const monoMap   = "𝙰𝙱𝙲𝙳𝙴𝙵𝙶𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇𝚈𝚉𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣𝟶𝟷𝟸𝟹𝟺𝟻𝟼𝟽𝟾𝟿";
+
+    /* ── Storage ── */
+    function loadFromStorage() {
+        if (localStorage.getItem('kori_draft')) mainInput.value      = localStorage.getItem('kori_draft');
+        if (localStorage.getItem('kori_sig'))   signatureInput.value = localStorage.getItem('kori_sig');
+        if (localStorage.getItem('kori_tags'))  hashtagInput.value   = localStorage.getItem('kori_tags');
+        handleInput(); saveState();
+    }
+
+    function saveToStorage() {
+        localStorage.setItem('kori_draft', mainInput.value);
+        localStorage.setItem('kori_sig',   signatureInput.value);
+        localStorage.setItem('kori_tags',  hashtagInput.value);
+        saveStatus.classList.add('visible');
+        setTimeout(() => saveStatus.classList.remove('visible'), 2000);
+    }
+
+    /* ── Core Input Handler ── */
+    function handleInput() {
+        const text = mainInput.value;
+        updateCharCount(text); syncBackdrop(text);
+        clearTimeout(window._saveT);    window._saveT    = setTimeout(saveToStorage, 500);
+        clearTimeout(window._historyT); window._historyT = setTimeout(saveState, 500);
+    }
+
+    function syncBackdrop(text) {
+        const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+        if (text.length <= MAX_CHARS) {
+            backdrop.innerHTML = esc(text).replace(/\n/g,'<br>') + '&nbsp;';
+        } else {
+            backdrop.innerHTML = esc(text.slice(0, MAX_CHARS)).replace(/\n/g,'<br>') +
+                '<mark class="danger-zone">' + esc(text.slice(MAX_CHARS)).replace(/\n/g,'<br>') + '</mark>&nbsp;';
+        }
+        backdrop.scrollTop = mainInput.scrollTop;
+    }
+
+    mainInput.addEventListener('scroll', () => { backdrop.scrollTop = mainInput.scrollTop; });
+
+    function updateCharCount(text) {
+        const rem = MAX_CHARS - text.length;
+        charCounter.classList.remove('warning','danger');
+        if (rem < 0) {
+            charCounter.textContent = `超過 ${Math.abs(rem)}`;
+            charCounter.classList.add('danger');
+        } else if (rem <= 50) {
+            charCounter.textContent = `剩餘 ${rem}`;
+            charCounter.classList.add('warning');
+        } else {
+            charCounter.textContent = `Threads ${rem}`;
+        }
+    }
+
+    window.onload = loadFromStorage;
+    mainInput.addEventListener('input', handleInput);
+    [signatureInput, hashtagInput].forEach(el =>
+        el.addEventListener('input', () => { clearTimeout(window._saveT); window._saveT = setTimeout(saveToStorage, 500); })
+    );
+
+    /* ── History ── */
+    function saveState() {
+        if (historyIndex < historyStack.length - 1) historyStack = historyStack.slice(0, historyIndex + 1);
+        historyStack.push(mainInput.value);
+        if (historyStack.length > maxHistory) historyStack.shift(); else historyIndex++;
+    }
+    function undo() { if (historyIndex > 0) { historyIndex--; mainInput.value = historyStack[historyIndex]; handleInput(); } }
+    function redo() { if (historyIndex < historyStack.length - 1) { historyIndex++; mainInput.value = historyStack[historyIndex]; handleInput(); } }
+    function executeAction(fn) { saveState(); fn(); handleInput(); }
+
+    /* ── Keyboard ── */
+    mainInput.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); return; }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); redo(); return; }
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const s = this.selectionStart, v = this.value, ins = e.shiftKey ? '\n' : '\n　\n';
+            this.value = v.slice(0, s) + ins + v.slice(this.selectionEnd);
+            this.selectionStart = this.selectionEnd = s + ins.length;
+            handleInput(); this.blur(); this.focus();
+        }
+    });
+
+    /* ── UI Toggles ── */
+    function toggleEmoji() {
+        document.getElementById('emojiBtn').classList.toggle('open');
+        document.getElementById('emojiBody').classList.toggle('open');
+    }
+    function toggleSettings() {
+        document.getElementById('settingsBtn').classList.toggle('open');
+        document.getElementById('settingsBody').classList.toggle('open');
+    }
+
+    /* ── Insert helpers ── */
+    function insertAtCursor(text) {
+        const s = mainInput.selectionStart;
+        mainInput.setRangeText(text);
+        mainInput.selectionStart = mainInput.selectionEnd = s + text.length;
+        mainInput.focus();
+    }
+
+    function insertEmoji(e)     { executeAction(() => insertAtCursor(e)); }
+    function insertSingleHash() { executeAction(() => insertAtCursor('#')); }
+    function insertTitlePrefix(){ executeAction(() => insertAtCursor('▍')); }
+
+    function insertHashtags() {
+        executeAction(() => {
+            const cur = mainInput.value, tags = hashtagInput.value;
+            mainInput.value = (cur.trim() && !cur.endsWith('\n')) ? cur + '\n\n' + tags : cur + tags;
+            mainInput.scrollTop = mainInput.scrollHeight;
+        });
+    }
+
+    function insertSignature() {
+        executeAction(() => {
+            const cur = mainInput.value, sig = signatureInput.value;
+            mainInput.value = (cur.trim() && !cur.endsWith('\n')) ? cur + '\n\n' + sig : cur + sig;
+            mainInput.scrollTop = mainInput.scrollHeight;
+        });
+    }
+
+    /* ── Wrap toggles ── */
+    function wrapToggle(open, close) {
+        executeAction(() => {
+            const s = mainInput.selectionStart, e = mainInput.selectionEnd;
+            if (s === e) return;
+            const sel = mainInput.value.substring(s, e);
+            mainInput.setRangeText(
+                (sel.startsWith(open) && sel.endsWith(close))
+                    ? sel.slice(open.length, -close.length)
+                    : `${open}${sel}${close}`
+            );
+        });
+        mainInput.focus();
+    }
+    function toggleBrackets()       { wrapToggle('【','】'); }
+    function toggleJapaneseQuotes() { wrapToggle('「','」'); }
+    function toggleCurlyQuotes()    { wrapToggle('\u201C','\u201D'); }
+
+    /* ── Smart Toggle Style (Ver 2.1 logic) ── */
+    function toggleStyle(styleType) {
+        executeAction(() => {
+            const start = mainInput.selectionStart, end = mainInput.selectionEnd;
+            if (start === end) return;
+
+            const selectedText = mainInput.value.substring(start, end);
+            const chars = Array.from(selectedText);
+
+            let targetMap = [];
+            if (styleType === 'bold')   targetMap = Array.from(boldMap);
+            if (styleType === 'italic') targetMap = Array.from(italicMap);
+            if (styleType === 'mono')   targetMap = Array.from(monoMap);
+
+            const normalArr = Array.from(normalMap);
+
+            // If ANY char is already in target map → revert all to normal
+            let toStyle = true;
+            for (const char of chars) {
+                if (targetMap.includes(char)) { toStyle = false; break; }
+            }
+
+            const boldArr   = Array.from(boldMap);
+            const italicArr = Array.from(italicMap);
+            const monoArr   = Array.from(monoMap);
+
+            const newText = chars.map(char => {
+                let idx = -1;
+                if (toStyle) {
+                    // try Normal → Target
+                    idx = normalArr.indexOf(char);
+                    if (idx !== -1) return targetMap[idx] || char;
+                    // cross-convert Bold/Italic/Mono → Target
+                    idx = boldArr.indexOf(char);   if (idx !== -1) return targetMap[idx] || char;
+                    idx = italicArr.indexOf(char); if (idx !== -1) return targetMap[idx] || char;
+                    idx = monoArr.indexOf(char);   if (idx !== -1) return targetMap[idx] || char;
+                    return char;
+                } else {
+                    // revert Target → Normal
+                    idx = targetMap.indexOf(char);
+                    if (idx !== -1) return normalArr[idx] || char;
+                    return char;
+                }
+            }).join('');
+
+            mainInput.setRangeText(newText);
+        });
+    }
+
+    /* ── Clear & Convert ── */
+    function clearText() {
+        if (confirm('確定要清空目前內容嗎？')) executeAction(() => { mainInput.value = ''; });
+    }
+
+    function convertAndCopy() {
+        let text = mainInput.value;
+        if (!text) { alert('請先輸入內容喔！'); return; }
+        text = text.replace(/\n\s*\n/g, '\n　\n');
+        text = text.replace(/^ +/gm, m => '　'.repeat(m.length));
+        navigator.clipboard.writeText(text).then(showToast).catch(() => alert('複製失敗，請手動複製。'));
+    }
+
+    function showToast() {
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+</script>
+</body>
+</html>
