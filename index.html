@@ -1,1018 +1,1809 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>小狸日語 SNS 空白編輯器</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            /* ── Blue Palette ── */
-            --blue-vivid:   #2563EB;
-            --blue-bright:  #3B82F6;
-            --blue-soft:    #60A5FA;
-            --blue-pale:    #DBEAFE;
-            --blue-ghost:   #EFF6FF;
-            --cyan:         #06B6D4;
-            --cyan-pale:    #CFFAFE;
-            --indigo:       #4F46E5;
-
-            /* ── Neutrals ── */
-            --ink:          #0B1120;
-            --ink-2:        #1E2F50;
-            --ink-3:        #64748B;
-            --white:        #FFFFFF;
-            --bg:           #F0F5FF;
-            --surface:      #FFFFFF;
-            --surface-2:    #F4F7FF;
-            --border:       #DBEAFE;
-            --border-2:     #E2E8F0;
-
-            /* ── Status ── */
-            --safe-bg:      #ECFDF5; --safe-fg:    #059669;
-            --warn-bg:      #FFFBEB; --warn-fg:    #D97706;
-            --danger-bg:    #FEF2F2; --danger-fg:  #DC2626;
-
-            /* ── Effects ── */
-            --grad:         linear-gradient(135deg, #2563EB 0%, #06B6D4 100%);
-            --grad-soft:    linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%);
-            --shadow-blue:  rgba(37,99,235,0.18);
-            --shadow-sm:    0 2px 10px var(--shadow-blue);
-            --shadow-md:    0 8px 28px var(--shadow-blue);
-            --shadow-lg:    0 24px 60px rgba(37,99,235,0.2);
-
-            --r-sm: 8px; --r-md: 14px; --r-lg: 22px; --r-xl: 30px;
-            --ease: cubic-bezier(0.4,0,0.2,1);
-        }
-
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif;
-            background: var(--bg);
-            background-image:
-                radial-gradient(ellipse 70% 50% at 15% -5%, rgba(37,99,235,0.10), transparent),
-                radial-gradient(ellipse 60% 45% at 85% 105%, rgba(6,182,212,0.12), transparent);
-            min-height: 100vh;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            padding: 36px 16px 72px;
-            color: var(--ink);
-        }
-
-        /* ══════════════════════════════
-           CARD
-        ══════════════════════════════ */
-        .card {
-            width: 100%;
-            max-width: 620px;
-            background: var(--surface);
-            border-radius: var(--r-xl);
-            box-shadow: var(--shadow-lg);
-            border: 1px solid var(--border);
-            overflow: hidden;
-            animation: popIn 0.55s cubic-bezier(0.16,1,0.3,1) both;
-        }
-
-        @keyframes popIn {
-            from { opacity:0; transform: scale(0.96) translateY(20px); }
-            to   { opacity:1; transform: scale(1)    translateY(0); }
-        }
-
-        /* ══════════════════════════════
-           HEADER
-        ══════════════════════════════ */
-        .card-header {
-            background: var(--white);
-            padding: 26px 30px 22px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1.5px solid var(--border);
-        }
-
-        .header-left { display: flex; align-items: center; gap: 16px; }
-
-        .logo-mark {
-            width: 48px; height: 48px;
-            background: var(--grad);
-            border-radius: 14px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.35rem;
-            flex-shrink: 0;
-            box-shadow: 0 6px 20px rgba(37,99,235,0.35);
-        }
-
-        .title-block { display: flex; flex-direction: column; gap: 3px; }
-
-        .title-main {
-            font-family: 'Playfair Display', 'Noto Serif TC', serif;
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: var(--ink);
-            letter-spacing: -0.01em;
-            line-height: 1.2;
-        }
-
-        .title-main span {
-            background: var(--grad-soft);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .title-sub {
-            font-size: 0.71rem;
-            color: var(--ink-3);
-            font-weight: 400;
-            letter-spacing: 0.07em;
-        }
-
-        .ver-badge {
-            background: var(--blue-ghost);
-            color: var(--blue-vivid);
-            font-size: 0.72rem;
-            font-weight: 700;
-            padding: 4px 12px;
-            border-radius: 30px;
-            border: 1.5px solid var(--blue-pale);
-            letter-spacing: 0.04em;
-            flex-shrink: 0;
-        }
-
-        /* ══════════════════════════════
-           BODY
-        ══════════════════════════════ */
-        .card-body { padding: 26px 28px 30px; }
-
-        /* ── Undo / Redo ── */
-        .undo-row {
-            display: flex; gap: 8px;
-            margin-bottom: 22px;
-        }
-
-        .undo-btn {
-            flex: 1;
-            padding: 10px;
-            background: var(--surface-2);
-            border: 1.5px solid var(--border);
-            border-radius: var(--r-md);
-            color: var(--ink-2);
-            font-size: 0.84rem;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: inherit;
-            transition: all 0.18s var(--ease);
-            display: flex; align-items: center; justify-content: center; gap: 6px;
-        }
-
-        .undo-btn:hover {
-            background: var(--blue-ghost);
-            border-color: var(--blue-bright);
-            color: var(--blue-vivid);
-            box-shadow: var(--shadow-sm);
-            transform: translateY(-2px);
-        }
-        .undo-btn:active { transform: scale(0.97); }
-
-        /* ── Label Row ── */
-        .label-row {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 12px;
-        }
-
-        .label-left {
-            display: flex; align-items: center; gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .label-dot {
-            width: 8px; height: 8px;
-            background: var(--grad-soft);
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .label-text {
-            font-size: 0.82rem;
-            font-weight: 700;
-            color: var(--ink-2);
-            letter-spacing: 0.04em;
-        }
-
-        .label-tip {
-            font-size: 0.71rem;
-            color: var(--ink-3);
-            font-weight: 400;
-        }
-
-        .label-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-
-        .save-dot {
-            font-size: 0.72rem;
-            color: var(--ink-3);
-            opacity: 0;
-            transition: opacity 0.3s;
-            display: flex; align-items: center; gap: 5px;
-        }
-        .save-dot::before {
-            content: '';
-            display: inline-block;
-            width: 6px; height: 6px;
-            background: #4ADE80;
-            border-radius: 50%;
-        }
-        .save-dot.visible { opacity: 1; }
-
-        .char-pill {
-            font-size: 0.78rem;
-            font-weight: 700;
-            padding: 4px 12px;
-            border-radius: 30px;
-            background: var(--safe-bg);
-            color: var(--safe-fg);
-            border: 1.5px solid #A7F3D0;
-            transition: all 0.2s;
-            letter-spacing: 0.02em;
-            white-space: nowrap;
-        }
-        .char-pill.warning { background: var(--warn-bg); color: var(--warn-fg); border-color: #FDE68A; animation: pulse 1.8s infinite; }
-        .char-pill.danger  { background: var(--danger-bg); color: var(--danger-fg); border-color: #FECACA; animation: pulse 1.2s infinite; }
-
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.65} }
-
-        /* ══════════════════════════════
-           EMOJI PANEL
-        ══════════════════════════════ */
-        .emoji-panel { margin-bottom: 12px; }
-
-        .emoji-toggle-btn {
-            width: 100%;
-            background: var(--surface-2);
-            border: 1.5px solid var(--border);
-            border-radius: var(--r-md);
-            padding: 9px 14px;
-            display: flex; align-items: center; justify-content: space-between;
-            cursor: pointer;
-            font-family: inherit;
-            transition: all 0.18s var(--ease);
-        }
-        .emoji-toggle-btn:hover { border-color: var(--blue-bright); background: var(--blue-ghost); }
-
-        .emoji-toggle-label {
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: var(--ink-2);
-            display: flex; align-items: center; gap: 8px;
-        }
-
-        .emoji-arrow {
-            font-size: 0.68rem;
-            color: var(--ink-3);
-            transition: transform 0.25s;
-        }
-
-        .emoji-toggle-btn.open {
-            border-radius: var(--r-md) var(--r-md) 0 0;
-            border-color: var(--blue-vivid);
-            background: var(--blue-ghost);
-        }
-        .emoji-toggle-btn.open .emoji-arrow { transform: rotate(180deg); }
-
-        .emoji-body {
-            display: none;
-            flex-direction: column;
-            gap: 7px;
-            padding: 12px 10px;
-            border: 1.5px solid var(--blue-vivid);
-            border-top: none;
-            border-radius: 0 0 var(--r-md) var(--r-md);
-            background: var(--white);
-        }
-        .emoji-body.open { display: flex; }
-
-        .emoji-row {
-            display: flex; gap: 5px;
-            overflow-x: auto; padding-bottom: 2px;
-            scrollbar-width: none;
-            -webkit-overflow-scrolling: touch;
-        }
-        .emoji-row::-webkit-scrollbar { display: none; }
-
-        .emoji-btn {
-            background: var(--surface-2);
-            border: 1.5px solid transparent;
-            border-radius: var(--r-sm);
-            font-size: 1.2rem;
-            padding: 5px 0;
-            cursor: pointer;
-            transition: all 0.15s;
-            flex: 1 0 auto;
-            min-width: 36px; max-width: 50px;
-            text-align: center;
-            user-select: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
-        }
-        .emoji-btn:hover {
-            background: var(--blue-ghost);
-            border-color: var(--blue-bright);
-            transform: scale(1.15) translateY(-2px);
-            box-shadow: 0 5px 14px rgba(37,99,235,0.2);
-        }
-        .emoji-btn:active { transform: scale(0.9); }
-
-        /* ══════════════════════════════
-           TOOLBAR
-        ══════════════════════════════ */
-        .toolbar-wrapper {
-            overflow-x: auto;
-            white-space: nowrap;
-            padding-bottom: 6px;
-            margin-bottom: 12px;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-        }
-        .toolbar-wrapper::-webkit-scrollbar { display: none; }
-
-        .toolbar {
-            display: inline-flex;
-            gap: 6px;
-        }
-
-        .tb-group {
-            display: inline-flex;
-            background: var(--surface-2);
-            border: 1.5px solid var(--border);
-            border-radius: var(--r-md);
-            padding: 4px;
-            gap: 2px;
-            flex-shrink: 0;
-        }
-
-        .tb-btn {
-            background: transparent;
-            border: none;
-            border-radius: var(--r-sm);
-            color: var(--ink-2);
-            padding: 6px 11px;
-            font-size: 0.83rem;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: inherit;
-            transition: all 0.15s var(--ease);
-            white-space: nowrap;
-            display: inline-flex; align-items: center; gap: 4px;
-        }
-
-        .tb-btn:hover {
-            background: var(--white);
-            box-shadow: var(--shadow-sm);
-            transform: translateY(-1px);
-        }
-        .tb-btn:active { transform: scale(0.94); box-shadow: none; }
-
-        /* colour variants */
-        .tb-btn.c-blue   { color: var(--blue-vivid); }
-        .tb-btn.c-blue:hover   { background: var(--blue-ghost); }
-
-        .tb-btn.c-cyan   { color: #0E7490; }
-        .tb-btn.c-cyan:hover   { background: var(--cyan-pale); }
-
-        .tb-btn.c-indigo { color: var(--indigo); }
-        .tb-btn.c-indigo:hover { background: #EEF2FF; }
-
-        .tb-div {
-            width: 1px;
-            background: var(--border);
-            margin: 4px 1px;
-            align-self: stretch;
-        }
-
-        /* ══════════════════════════════
-           EDITOR
-        ══════════════════════════════ */
-        .editor-wrap {
-            position: relative;
-            width: 100%;
-            height: 300px;
-            border: 2px solid var(--border);
-            border-radius: var(--r-lg);
-            background: var(--surface-2);
-            overflow: hidden;
-            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-            margin-bottom: 14px;
-        }
-
-        .editor-wrap:focus-within {
-            border-color: var(--blue-bright);
-            background: var(--white);
-            box-shadow: 0 0 0 4px rgba(59,130,246,0.15), var(--shadow-sm);
-        }
-
-        .editor-backdrop, .editor-textarea {
-            position: absolute; top:0; left:0;
-            width:100%; height:100%;
-            padding: 18px 20px;
-            font-size: 16px;
-            line-height: 1.75;
-            font-family: inherit;
-            border: none; overflow: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            box-sizing: border-box;
-            border-radius: var(--r-lg);
-        }
-
-        .editor-backdrop {
-            z-index: 1; color: transparent;
-            background: transparent; pointer-events: none;
-        }
-
-        mark.danger-zone {
-            background: rgba(220,38,38,0.15);
-            color: transparent;
-            border-radius: 4px;
-        }
-
-        .editor-textarea {
-            z-index: 2; color: var(--ink);
-            background: transparent; resize: none; outline: none;
-        }
-
-        .editor-textarea::placeholder { color: #BFDBFE; }
-        .editor-textarea::-webkit-scrollbar { width: 5px; }
-        .editor-textarea::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-
-        /* ══════════════════════════════
-           BOTTOM BUTTONS
-        ══════════════════════════════ */
-        .action-row {
-            display: flex; gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .btn {
-            border: none;
-            border-radius: var(--r-md);
-            font-size: 0.88rem;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: inherit;
-            transition: all 0.18s var(--ease);
-            display: flex; align-items: center; justify-content: center; gap: 7px;
-            padding: 12px 18px;
-        }
-        .btn:active { transform: scale(0.97); }
-
-        .btn-outline {
-            background: var(--white);
-            border: 1.5px solid var(--border);
-            color: var(--ink-2);
-            flex: 1;
-        }
-        .btn-outline:hover {
-            border-color: var(--blue-bright);
-            color: var(--blue-vivid);
-            background: var(--blue-ghost);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .btn-icon-only {
-            background: var(--white);
-            border: 1.5px solid var(--border);
-            color: var(--ink-3);
-            width: 46px; flex-shrink: 0;
-            font-size: 1.1rem;
-            padding: 0;
-        }
-        .btn-icon-only:hover {
-            border-color: #FECACA;
-            color: var(--danger-fg);
-            background: var(--danger-bg);
-        }
-
-        /* CTA — 主按鈕 */
-        .btn-cta {
-            width: 100%;
-            padding: 17px;
-            background: var(--grad);
-            color: #fff;
-            font-size: 1rem;
-            font-weight: 700;
-            border-radius: var(--r-lg);
-            letter-spacing: 0.04em;
-            box-shadow: 0 8px 28px rgba(37,99,235,0.38);
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* shimmer sweep on hover */
-        .btn-cta::after {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%;
-            width: 55%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s ease;
-        }
-        .btn-cta:hover {
-            box-shadow: 0 12px 36px rgba(37,99,235,0.48);
-            transform: translateY(-2px);
-        }
-        .btn-cta:hover::after { left: 160%; }
-
-        /* ══════════════════════════════
-           SETTINGS
-        ══════════════════════════════ */
-        .settings-trigger {
-            width: 100%;
-            background: none;
-            border: none;
-            border-top: 1.5px dashed var(--border);
-            padding: 16px 0 0;
-            margin-top: 18px;
-            cursor: pointer;
-            font-family: inherit;
-            color: var(--ink-3);
-            font-size: 0.82rem;
-            font-weight: 600;
-            display: flex; align-items: center; gap: 8px;
-            letter-spacing: 0.04em;
-            transition: color 0.2s;
-        }
-        .settings-trigger:hover { color: var(--blue-vivid); }
-        .settings-trigger .s-arr { margin-left: auto; font-size: 0.68rem; transition: transform 0.25s; }
-        .settings-trigger.open { color: var(--blue-vivid); }
-        .settings-trigger.open .s-arr { transform: rotate(180deg); }
-
-        .settings-body { display: none; margin-top: 16px; flex-direction: column; gap: 14px; }
-        .settings-body.open { display: flex; }
-
-        .setting-label {
-            font-size: 0.73rem;
-            font-weight: 700;
-            color: var(--ink-3);
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            margin-bottom: 7px;
-            display: block;
-        }
-
-        .setting-textarea {
-            width: 100%;
-            height: 90px;
-            border: 1.5px solid var(--border);
-            border-radius: var(--r-md);
-            background: var(--surface-2);
-            color: var(--ink-2);
-            font-size: 12.5px;
-            font-family: inherit;
-            line-height: 1.65;
-            padding: 10px 12px;
-            resize: vertical; outline: none;
-            transition: border-color 0.2s, background 0.2s;
-        }
-        .setting-textarea:focus {
-            border-color: var(--blue-bright);
-            background: var(--white);
-            box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
-        }
-
-        /* ══════════════════════════════
-           TOAST
-        ══════════════════════════════ */
-        #toast {
-            position: fixed;
-            bottom: 28px; left: 50%;
-            transform: translateX(-50%) translateY(16px);
-            background: var(--ink);
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 30px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            box-shadow: 0 12px 36px rgba(11,17,32,0.3);
-            opacity: 0; visibility: hidden;
-            transition: opacity 0.3s cubic-bezier(0.68,-0.55,0.27,1.55),
-                        transform 0.3s cubic-bezier(0.68,-0.55,0.27,1.55);
-            z-index: 999;
-            display: flex; align-items: center; gap: 10px;
-            white-space: nowrap;
-            border-top: 2px solid var(--cyan);
-        }
-        #toast::before {
-            content: '';
-            width: 8px; height: 8px;
-            background: var(--grad-soft);
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-        #toast.show { opacity:1; visibility:visible; transform: translateX(-50%) translateY(0); }
-
-        /* ══════════════════════════════
-           RESPONSIVE
-        ══════════════════════════════ */
-        @media (max-width: 480px) {
-            .card-body { padding: 18px 16px 22px; }
-            .card-header { padding: 18px 18px 16px; }
-            .title-main { font-size: 1rem; }
-            .btn-cta { font-size: 0.95rem; padding: 15px; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小狸日檢補給站</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=Noto+Sans+JP:wght@400;500;700&family=DM+Serif+Display:ital@0;1&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --accent: #2E7D6E;
+  --accent-dark: #1B5E53;
+  --card-bg: #FAFBF0;
+  --dot-color: #C8E6C9;
+  --works-bg: #F4FAF7;
+  --works-dot: #B2DFDB;
+  --item-border: #C8E6C9;
+  --badge-color: #2E7D6E;
+  --badge-bg: #E8F5E9;
+}
+
+body { background:#0d1117; font-family:'Noto Serif TC',serif; color:#ccc; min-height:100vh; }
+
+body[data-mode="dark"] { background:#0d1117; color:#e0e0e0; }
+body[data-mode="dark"] .panel { background:#161b27; border-color:#2a3348; }
+body[data-mode="dark"] .color-section { background:#121620; border-color:#2a3348; }
+body[data-mode="dark"] .or-row { color:#6a8a6a; }
+body[data-mode="dark"] .or-line { background:#2a3348; }
+body[data-mode="dark"] .key-input { background:#0d1117; color:#c8f0e8; border-color:#3a5a4a; }
+body[data-mode="dark"] .key-toggle { background:#1e3028; border-color:#3a5a4a; color:#80c8b0; }
+body[data-mode="dark"] .key-hint { color:#7a9a7a; }
+body[data-mode="dark"] .topic-input { background:#0d1117; color:#f0f0f0; border-color:#3a5a4a; }
+body[data-mode="dark"] .ai-hint { color:#7a9a7a; }
+body[data-mode="dark"] .ai-hint span { color:#88bb88; }
+body[data-mode="dark"] textarea#json-input { background:#0d1117; color:#c8f0e8; border-color:#2a4a3a; }
+body[data-mode="dark"] .ruby-hint { color:#7a9a7a; }
+body[data-mode="dark"] .ruby-hint span { color:#88bb88; }
+body[data-mode="dark"] #status { color:#80c0a0; }
+body[data-mode="dark"] .card-label { color:#6a8a7a; }
+body[data-mode="dark"] .spacer-line { background:rgba(255,255,255,0.08); }
+body[data-mode="dark"] .sns-output { background:#0d1117; color:#e0e8e4; border-color:#2a4a3a; }
+body[data-mode="dark"] .sns-copy-btn { background:#1e3028; color:#80c8b0; border-color:#3a5a4a; }
+
+/* History panel dark */
+body[data-mode="dark"] .history-panel { background:#161b27; border-color:#2a3348; }
+body[data-mode="dark"] .history-item { background:#0d1117; border-color:#2a3348; }
+body[data-mode="dark"] .history-item:hover { border-color:var(--accent); background:#0f1a14; }
+body[data-mode="dark"] .history-kw { color:#c8f0e8; }
+body[data-mode="dark"] .history-meta { color:#6a8a7a; }
+body[data-mode="dark"] .history-empty { color:#4a6a5a; }
+body[data-mode="dark"] .history-toggle { background:#1e3028; border-color:#3a5a4a; color:#80c8b0; }
+
+body[data-mode="light"] { background:#eef1f5; color:#1a2030; }
+body[data-mode="light"] .panel { background:#fff; border-color:#d0d8e8; }
+body[data-mode="light"] .color-section { background:#f4f7fb; border-color:#d0d8e8; }
+body[data-mode="light"] .or-row { color:#a0aab8; }
+body[data-mode="light"] .or-line { background:#d0d8e8; }
+body[data-mode="light"] .key-input { background:#f0f4f8; color:#1a2030; border-color:#b0bece; }
+body[data-mode="light"] .key-toggle { background:#e4eaf4; border-color:#b0bece; color:#404a5a; }
+body[data-mode="light"] .key-hint { color:#708090; }
+body[data-mode="light"] .topic-input { background:#f0f4f8; color:#1a2030; border-color:#b0bece; }
+body[data-mode="light"] .ai-hint { color:#708090; }
+body[data-mode="light"] .ai-hint span { color:#506070; }
+body[data-mode="light"] textarea#json-input { background:#f0f4f8; color:#1a3a2a; border-color:#b0cec0; }
+body[data-mode="light"] .ruby-hint { color:#708090; }
+body[data-mode="light"] .ruby-hint span { color:#506070; }
+body[data-mode="light"] #status { color:#406050; }
+body[data-mode="light"] .card-label { color:#8090a0; }
+body[data-mode="light"] .spacer-line { background:rgba(0,0,0,0.1); }
+body[data-mode="light"] .panel-title { color:var(--accent); }
+body[data-mode="light"] .sns-output { background:#f0f4f8; color:#1a2030; border-color:#b0cec0; }
+body[data-mode="light"] .sns-copy-btn { background:#e4eaf4; color:#406050; border-color:#b0cec0; }
+
+body[data-mode="light"] .history-panel { background:#fff; border-color:#d0d8e8; }
+body[data-mode="light"] .history-item { background:#f4f7fb; border-color:#d0d8e8; }
+body[data-mode="light"] .history-item:hover { border-color:var(--accent); background:#eef7f4; }
+body[data-mode="light"] .history-kw { color:#1a3a2a; }
+body[data-mode="light"] .history-meta { color:#708090; }
+body[data-mode="light"] .history-empty { color:#a0b0a8; }
+body[data-mode="light"] .history-toggle { background:#e4eaf4; border-color:#b0bece; color:#404a5a; }
+
+body[data-mode="warm"] { background:#f0e4d0; color:#2a1a08; }
+body[data-mode="warm"] .panel { background:#fdf6ec; border-color:#d8c8a8; }
+body[data-mode="warm"] .color-section { background:#f8efe0; border-color:#d8c8a8; }
+body[data-mode="warm"] .or-row { color:#b09070; }
+body[data-mode="warm"] .or-line { background:#d8c8a8; }
+body[data-mode="warm"] .key-input { background:#fdf6ec; color:#2a1a08; border-color:#c0a880; }
+body[data-mode="warm"] .key-toggle { background:#eddcc0; border-color:#c0a880; color:#5a3010; }
+body[data-mode="warm"] .key-hint { color:#906040; }
+body[data-mode="warm"] .topic-input { background:#fdf6ec; color:#2a1a08; border-color:#c0a880; }
+body[data-mode="warm"] .ai-hint { color:#906040; }
+body[data-mode="warm"] .ai-hint span { color:#7a4a20; }
+body[data-mode="warm"] textarea#json-input { background:#fdf6ec; color:#2a1a08; border-color:#c0a880; }
+body[data-mode="warm"] .ruby-hint { color:#906040; }
+body[data-mode="warm"] .ruby-hint span { color:#7a4a20; }
+body[data-mode="warm"] #status { color:#7a4a20; }
+body[data-mode="warm"] .card-label { color:#906040; }
+body[data-mode="warm"] .spacer-line { background:rgba(0,0,0,0.08); }
+body[data-mode="warm"] .sns-output { background:#fdf6ec; color:#2a1a08; border-color:#c0a880; }
+body[data-mode="warm"] .sns-copy-btn { background:#eddcc0; color:#5a3010; border-color:#c0a880; }
+
+body[data-mode="warm"] .history-panel { background:#fdf6ec; border-color:#d8c8a8; }
+body[data-mode="warm"] .history-item { background:#f8efe0; border-color:#d8c8a8; }
+body[data-mode="warm"] .history-item:hover { border-color:var(--accent); background:#f5e8d0; }
+body[data-mode="warm"] .history-kw { color:#2a1a08; }
+body[data-mode="warm"] .history-meta { color:#906040; }
+body[data-mode="warm"] .history-empty { color:#c0a888; }
+body[data-mode="warm"] .history-toggle { background:#eddcc0; border-color:#c0a880; color:#5a3010; }
+
+/* mode switcher */
+.mode-bar {
+  display:flex; gap:0;
+  border-bottom:1px solid rgba(0,0,0,0.08);
+}
+.mode-btn {
+  flex:1; padding:12px 4px; font-size:14px; font-family:'Nunito',sans-serif; font-weight:700;
+  letter-spacing:0.08em; border:none; cursor:pointer; transition:all 0.15s;
+  background:transparent; color:rgba(255,255,255,0.5);
+}
+body[data-mode="light"] .mode-btn { color:#999; }
+body[data-mode="warm"]  .mode-btn { color:#c0a888; }
+.mode-btn.active { color:#fff; background:var(--accent); }
+body[data-mode="light"] .mode-btn.active { color:#fff; }
+body[data-mode="warm"]  .mode-btn.active { color:#fff; }
+
+/* ══ TOPBAR ══ */
+.topbar {
+  background:linear-gradient(135deg, var(--accent), var(--accent-dark));
+  padding:14px 18px 12px;
+  border-bottom:2px solid rgba(255,255,255,0.1);
+}
+.topbar-title { font-size:24px; color:#fff; font-weight:900; letter-spacing:0.08em; font-family:'Noto Serif TC',serif; }
+.topbar-sub { font-size:13px; color:rgba(255,255,255,0.6); letter-spacing:0.2em; font-family:'Nunito',sans-serif; margin-top:3px; }
+
+/* ══ COLLAPSIBLE PANELS ══ */
+.c-panel { border-bottom:1px solid #1e2430; }
+.c-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 18px; cursor:pointer; user-select:none;
+  transition:opacity 0.1s;
+}
+.c-header:active { opacity:0.7; }
+.c-header .panel-title { margin-bottom:0; }
+.c-chevron {
+  font-size:13px; font-family:'Nunito',sans-serif; font-weight:700;
+  opacity:0.45; flex-shrink:0; margin-left:8px; transition:transform 0.2s;
+}
+.c-body {
+  padding:0 18px 18px;
+  overflow:hidden;
+  transition:max-height 0.28s ease, opacity 0.2s ease;
+}
+.c-body.collapsed {
+  max-height:0 !important;
+  opacity:0;
+  padding-bottom:0;
+  pointer-events:none;
+}
+body[data-mode="dark"]  .c-panel { border-color:#2a3348; }
+body[data-mode="light"] .c-panel { border-color:#d0d8e8; }
+body[data-mode="warm"]  .c-panel { border-color:#d8c8a8; }
+body[data-mode="dark"]  .c-panel { background:#161b27; }
+body[data-mode="light"] .c-panel { background:#fff; }
+body[data-mode="warm"]  .c-panel { background:#fdf6ec; }
+.panel { border-bottom:1px solid #1e2430; padding:18px; }
+.panel-title {
+  font-size:13px; letter-spacing:0.18em; color:var(--accent);
+  text-transform:uppercase; font-family:'Nunito',sans-serif; font-weight:700; margin-bottom:12px;
+}
+
+/* ══ API KEY ══ */
+.key-row { display:flex; gap:8px; align-items:center; }
+.key-input { flex:1; font-family:'Courier New',monospace; font-size:15px; border:1px solid; border-radius:8px; padding:11px 14px; outline:none; }
+.key-input:focus { border-color:var(--accent); }
+.key-toggle { font-size:14px; font-family:'Nunito',sans-serif; font-weight:700; padding:11px 14px; border-radius:8px; cursor:pointer; white-space:nowrap; border:1px solid; }
+.key-hint { font-size:13px; font-family:'Nunito',sans-serif; margin-top:7px; }
+
+/* ══ AI TOPIC ══ */
+.ai-row { display:flex; gap:8px; align-items:flex-start; }
+.topic-input { flex:1; font-family:'Noto Serif TC',serif; font-size:16px; border:1px solid; border-radius:8px; padding:12px 14px; outline:none; resize:none; height:68px; }
+.topic-input:focus { border-color:var(--accent); }
+.btn-ai {
+  background:linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color:#fff; font-size:15px; font-family:'Noto Serif TC',serif; font-weight:700;
+  border:none; border-radius:10px; padding:12px 16px; cursor:pointer;
+  white-space:nowrap; letter-spacing:0.05em; line-height:1.5;
+}
+.btn-ai:disabled { opacity:0.4; cursor:not-allowed; }
+.ai-hint { font-size:13px; font-family:'Nunito',sans-serif; margin-top:7px; }
+
+/* ══ DIVIDER ══ */
+.or-row { display:flex; align-items:center; gap:10px; padding:12px 18px; font-size:14px; font-family:'Nunito',sans-serif; letter-spacing:0.15em; }
+.or-line { flex:1; height:1px; }
+
+/* ══ JSON EDITOR ══ */
+textarea#json-input { width:100%; height:200px; font-family:'Courier New',monospace; font-size:14px; line-height:1.7; border:1px solid; border-radius:8px; padding:12px; resize:vertical; outline:none; }
+textarea#json-input:focus { border-color:var(--accent); }
+.ruby-hint { font-size:13px; font-family:'Nunito',sans-serif; margin-top:7px; line-height:1.8; }
+
+/* ══ COLOR SWITCHER ══ */
+.color-section { padding:16px 18px; border-bottom:1px solid; }
+.swatch-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+.swatch { width:38px; height:38px; border-radius:10px; cursor:pointer; border:2px solid transparent; transition:border 0.15s; display:flex; align-items:center; justify-content:center; }
+.swatch.active { border-color:#fff; }
+body[data-mode="light"] .swatch.active { border-color:#333; }
+body[data-mode="warm"]  .swatch.active { border-color:#5a3020; }
+.swatch-check { color:#fff; font-size:16px; display:none; }
+.swatch.active .swatch-check { display:block; }
+
+/* ══ BATCH NAV ══ */
+.batch-nav {
+  display:none; align-items:center; justify-content:space-between;
+  padding:10px 18px; gap:10px;
+}
+.batch-nav.show { display:flex; }
+.nav-btn {
+  background:var(--accent); color:#fff;
+  font-size:15px; font-family:'Nunito',sans-serif; font-weight:700;
+  border:none; border-radius:10px; padding:10px 20px; cursor:pointer;
+}
+.nav-btn:disabled { opacity:0.3; cursor:not-allowed; }
+.nav-info { font-size:15px; font-family:'Noto Serif TC',serif; font-weight:700; text-align:center; flex:1; }
+body[data-mode="dark"] .nav-info { color:#A8D5CB; }
+body[data-mode="light"] .nav-info { color:#333; }
+body[data-mode="warm"] .nav-info { color:#7B4F2E; }
+
+/* ══ SNS PANEL ══ */
+.sns-panel { border-bottom:1px solid; padding:18px; }
+.sns-output {
+  width:100%; min-height:160px;
+  font-family:'Noto Serif TC',serif; font-size:15px; line-height:1.9;
+  border:1px solid; border-radius:10px;
+  padding:14px; margin-top:10px;
+  outline:none; resize:vertical;
+  white-space:pre-wrap; word-break:break-all;
+}
+.sns-btn-row { display:flex; gap:10px; margin-top:10px; }
+.btn-sns {
+  flex:1; padding:11px;
+  background:linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color:#fff; font-size:15px; font-family:'Noto Serif TC',serif; font-weight:700;
+  border:none; border-radius:10px; cursor:pointer; letter-spacing:0.05em;
+}
+.btn-sns:disabled { opacity:0.4; cursor:not-allowed; }
+.sns-copy-btn {
+  padding:11px 20px; font-size:15px; font-family:'Nunito',sans-serif; font-weight:700;
+  border:1px solid; border-radius:10px; cursor:pointer; letter-spacing:0.05em;
+  background:transparent;
+}
+.sns-char-count { font-size:12px; font-family:'Nunito',sans-serif; text-align:right; margin-top:5px; opacity:0.6; }
+
+/* ══ SNS NAV ══ */
+.sns-nav {
+  display:none; align-items:center; gap:8px;
+  margin-bottom:12px; padding:10px 12px;
+  border-radius:10px; border:1px solid;
+}
+.sns-nav.show { display:flex; }
+body[data-mode="dark"]  .sns-nav { background:#0d1117; border-color:#2a4a3a; }
+body[data-mode="light"] .sns-nav { background:#f0f4f8; border-color:#b0cec0; }
+body[data-mode="warm"]  .sns-nav { background:#fdf6ec; border-color:#c0a880; }
+.sns-nav-arrow {
+  flex-shrink:0; width:34px; height:34px; border-radius:8px; border:1px solid;
+  cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;
+  background:transparent; transition:background 0.12s;
+}
+body[data-mode="dark"]  .sns-nav-arrow { border-color:#3a5a4a; color:#80c8b0; }
+body[data-mode="light"] .sns-nav-arrow { border-color:#b0bece; color:#406050; }
+body[data-mode="warm"]  .sns-nav-arrow { border-color:#c0a880; color:#7B4F2E; }
+.sns-nav-arrow:hover:not(:disabled) { background:var(--accent); color:#fff; border-color:var(--accent); }
+.sns-nav-arrow:disabled { opacity:0.25; cursor:not-allowed; }
+.sns-nav-info { flex:1; min-width:0; text-align:center; }
+.sns-nav-kw { font-size:17px; font-family:'DM Serif Display',serif; font-weight:700; line-height:1.2; color:var(--accent); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sns-nav-zh { font-size:12px; font-family:'Noto Serif TC',serif; opacity:0.7; margin-top:1px; }
+.sns-nav-pos { font-size:11px; font-family:'Nunito',sans-serif; opacity:0.5; margin-top:2px; letter-spacing:0.05em; }
+.sns-no-history { font-size:13px; font-family:'Nunito',sans-serif; opacity:0.55; margin-bottom:8px; }
+
+/* ══ HISTORY PANEL ══ */
+.history-panel {
+  border-bottom:1px solid;
+  padding:16px 18px;
+}
+.history-header-row {
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:0;
+}
+.history-panel .panel-title { margin-bottom:0; }
+.history-toggle {
+  font-size:12px; font-family:'Nunito',sans-serif; font-weight:700;
+  padding:5px 12px; border-radius:6px; cursor:pointer; border:1px solid;
+  letter-spacing:0.05em;
+}
+.history-list {
+  display:none; flex-direction:column; gap:8px;
+  margin-top:12px; max-height:320px; overflow-y:auto;
+}
+.history-list.open { display:flex; }
+.history-item {
+  border:1px solid; border-radius:10px; padding:10px 12px;
+  display:flex; align-items:center; gap:10px; cursor:pointer;
+  transition:border-color 0.15s, background 0.15s;
+  position:relative;
+}
+.history-item-info { flex:1; min-width:0; }
+.history-kw { font-size:17px; font-family:'DM Serif Display',serif; font-weight:700; line-height:1.2; }
+.history-zh { font-size:13px; font-family:'Noto Serif TC',serif; margin-top:1px; opacity:0.8; }
+.history-meta { font-size:11px; font-family:'Nunito',sans-serif; letter-spacing:0.05em; margin-top:4px; }
+.history-load-btn {
+  flex-shrink:0; padding:6px 14px;
+  background:linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color:#fff; font-size:12px; font-family:'Nunito',sans-serif; font-weight:700;
+  border:none; border-radius:6px; cursor:pointer; letter-spacing:0.05em; white-space:nowrap;
+}
+.history-del-btn {
+  flex-shrink:0; padding:6px 10px;
+  background:transparent; color:#c0504040; font-size:14px;
+  border:1px solid #c0504020; border-radius:6px; cursor:pointer;
+  transition:background 0.15s;
+}
+.history-del-btn:hover { background:#ff404020; color:#ff6060; border-color:#ff404060; }
+.history-empty { font-size:14px; font-family:'Nunito',sans-serif; text-align:center; padding:18px 0; letter-spacing:0.05em; }
+.history-count { font-size:12px; font-family:'Nunito',sans-serif; opacity:0.6; margin-top:8px; text-align:right; }
+.history-clear-btn {
+  font-size:11px; font-family:'Nunito',sans-serif; font-weight:700;
+  background:transparent; border:1px solid rgba(200,80,80,0.3);
+  color:rgba(200,80,80,0.7); border-radius:5px; padding:3px 9px; cursor:pointer;
+  margin-left:8px;
+}
+.history-clear-btn:hover { background:rgba(200,80,80,0.1); }
+
+/* ══ CONTENT EDITOR ══ */
+.ed-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+}
+.ed-sep {
+  grid-column:1/-1; font-size:12px; font-family:'Nunito',sans-serif;
+  font-weight:700; letter-spacing:0.1em; opacity:0.45; padding:4px 0 0;
+}
+.ed-group { display:flex; flex-direction:column; gap:4px; }
+.ed-label {
+  font-size:11px; font-family:'Nunito',sans-serif; font-weight:700;
+  letter-spacing:0.08em; opacity:0.55; text-transform:uppercase;
+}
+.ed-input {
+  font-family:'Noto Serif TC',serif; font-size:14px;
+  border:1px solid; border-radius:7px; padding:8px 10px;
+  outline:none; resize:none; width:100%;
+}
+.ed-input:focus { border-color:var(--accent); }
+.ed-ta { height:62px; }
+body[data-mode="dark"]  .ed-input { background:#0d1117; color:#c8f0e8; border-color:#2a4a3a; }
+body[data-mode="light"] .ed-input { background:#f0f4f8; color:#1a2030; border-color:#b0bece; }
+body[data-mode="warm"]  .ed-input { background:#fdf6ec; color:#2a1a08; border-color:#c0a880; }
+.btn-apply {
+  display:block; width:100%; margin-top:14px; padding:13px;
+  background:linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color:#fff; font-size:15px; font-family:'Noto Serif TC',serif; font-weight:700;
+  letter-spacing:0.08em; border:none; border-radius:10px; cursor:pointer;
+}
+.btn-apply:active { opacity:0.85; }
+.btn-generate {
+  display:block; width:calc(100% - 36px); margin:16px 18px 0;
+  padding:15px; background:linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color:#fff; font-size:17px; font-family:'Noto Serif TC',serif; font-weight:900;
+  letter-spacing:0.1em; border:none; border-radius:12px; cursor:pointer;
+}
+.btn-generate:active { opacity:0.85; }
+
+/* ══ DOWNLOAD ALL BTN ══ */
+.btn-dl-all {
+  display:none; width:calc(100% - 36px); margin:10px 18px 16px;
+  padding:13px; background:transparent;
+  color:var(--accent); font-size:15px; font-family:'Nunito',sans-serif; font-weight:700;
+  letter-spacing:0.08em; border:2px solid var(--accent); border-radius:12px; cursor:pointer;
+  transition:background 0.15s, color 0.15s;
+}
+.btn-dl-all:hover { background:var(--accent); color:#fff; }
+.btn-dl-all.show { display:block; }
+.btn-dl-all:disabled { opacity:0.4; cursor:wait; }
+
+/* ══ STATUS ══ */
+#status { text-align:center; font-size:14px; font-family:'Nunito',sans-serif; padding:8px 16px 0; min-height:22px; letter-spacing:0.1em; }
+
+/* ══ OUTPUT — 2×2 grid ══ */
+#output {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:20px; padding:20px 12px 56px; width:100%;
+}
+
+.card-block { display:flex; flex-direction:column; align-items:center; width:100%; }
+.card-label { font-size:12px; letter-spacing:0.12em; font-family:'Nunito',sans-serif; font-weight:700; margin-bottom:6px; padding-left:4px; align-self:flex-start; width:100%; }
+body[data-mode="dark"] .card-label { color:#556b55; }
+body[data-mode="light"] .card-label { color:#999; }
+body[data-mode="warm"]  .card-label { color:#b09070; }
+
+.card-wrapper { width:100%; overflow:hidden; position:relative; display:flex; justify-content:center; }
+.card-wrapper .card { transform-origin:top left; flex-shrink:0; }
+
+.dl-btn {
+  margin-top:10px; padding:10px 20px;
+  background:var(--accent); color:#fff;
+  font-size:14px; font-family:'Nunito',sans-serif; font-weight:700;
+  letter-spacing:0.08em; border:none; border-radius:24px; cursor:pointer; width:100%;
+}
+.dl-btn:disabled { opacity:0.5; cursor:wait; }
+.dl-btn:active { background:var(--accent-dark); }
+.spacer { height:36px; display:flex; align-items:center; justify-content:center; width:100%; }
+.spacer-line { width:36px; height:1px; }
+body[data-mode="dark"] .spacer-line { background:rgba(255,255,255,0.05); }
+body[data-mode="light"] .spacer-line { background:rgba(0,0,0,0.06); }
+body[data-mode="warm"]  .spacer-line { background:rgba(0,0,0,0.05); }
+
+/* offscreen for canvas export only */
+#render-area { position:fixed; top:0; left:-9999px; width:400px; pointer-events:none; }
+
+/* ══ CARD STYLES ══ */
+.card { width:400px; height:400px; position:relative; overflow:hidden; display:flex; flex-direction:column; flex-shrink:0; }
+
+.card-mark {
+  position:absolute; top:12px; right:14px;
+  background:#D4462A; color:#fff;
+  font-size:12px; font-family:'Noto Serif TC',serif; font-weight:700;
+  padding:6px 12px; border-radius:4px; letter-spacing:0.05em; z-index:10;
+}
+.ex-mark {
+  position:absolute; top:10px; right:14px;
+  background:#D4462A; color:#fff;
+  font-size:12px; font-family:'Noto Serif TC',serif; font-weight:700;
+  padding:6px 12px; border-radius:4px; letter-spacing:0.05em; z-index:10;
+}
+
+/* P1 */
+.p1-dots { position:absolute; inset:0; background-image:radial-gradient(var(--dot-color) 1.5px, transparent 1.5px); background-size:22px 22px; opacity:0.45; }
+.p1-top { padding:28px 26px 28px; position:relative; overflow:hidden; flex-shrink:0; }
+.p1-d1 { position:absolute; border-radius:50%; width:110px; height:110px; bottom:-30px; right:-25px; background:rgba(255,255,255,0.08); }
+.p1-d2 { position:absolute; border-radius:50%; width:70px; height:70px; top:-22px; left:-18px; background:rgba(255,255,255,0.05); }
+.p1-brand { font-size:12px; letter-spacing:0.3em; color:rgba(255,255,255,0.72); font-family:'Nunito',sans-serif; font-weight:700; text-transform:uppercase; position:relative; }
+.p1-body { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:14px 26px 10px; position:relative; z-index:1; gap:10px; }
+.p1-tag { color:#fff; font-size:12px; font-family:'Nunito',sans-serif; font-weight:700; letter-spacing:0.1em; padding:4px 14px; border-radius:20px; }
+.p1-ruby { font-size:13px; font-family:'Noto Sans JP',sans-serif; letter-spacing:0.15em; }
+.p1-kw { font-family:'DM Serif Display',serif; font-size:48px; line-height:1.1; text-align:center; }
+.p1-zh { font-size:20px; font-weight:600; letter-spacing:0.12em; }
+.p1-divider { width:80px; height:2px; border-radius:2px; }
+.p1-synonym { font-size:17px; text-align:center; font-family:'Noto Serif TC',serif; font-weight:600; letter-spacing:0.05em; margin-top:10px; }
+.p1-footer { padding:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.p1-footer-brand { font-size:18px; color:rgba(255,255,255,0.92); font-family:'Noto Serif TC',serif; font-weight:900; letter-spacing:0.15em; }
+
+/* P2/P3 */
+.p2-grid { position:absolute; inset:0; background-size:20px 20px; opacity:0.18; }
+.p2-header { padding:15px 22px 12px; position:relative; overflow:hidden; flex-shrink:0; }
+.p2-deco { position:absolute; border-radius:50%; background:rgba(255,255,255,0.04); }
+.p2-deco.a { width:120px; height:120px; top:-50px; right:-20px; }
+.p2-deco.b { width:60px; height:60px; bottom:-26px; left:16px; }
+.p2-brand { font-size:10px; letter-spacing:0.28em; color:#A8C4E0; font-family:'Noto Sans JP',sans-serif; margin-bottom:4px; text-transform:uppercase; }
+.p2-kw-ruby { font-size:11px; color:#7FA8CC; font-family:'Noto Sans JP',sans-serif; letter-spacing:0.1em; margin-bottom:1px; }
+.p2-kw { font-family:'DM Serif Display',serif; font-size:32px; color:#fff; line-height:1.15; padding-right:110px; }
+.p2-kw-zh { font-size:12px; color:#E8D5B0; font-weight:600; margin-top:4px; letter-spacing:0.08em; }
+.p2-tags { display:flex; gap:5px; margin-top:5px; }
+.p2-tag { background:rgba(255,255,255,0.1); color:#A8C4E0; font-size:10px; padding:2px 8px; border-radius:2px; font-family:'Noto Sans JP',sans-serif; }
+.p2-body { flex:1; display:flex; flex-direction:column; justify-content:center; padding:14px 22px 10px; position:relative; z-index:1; gap:9px; }
+.p2-sec { font-size:9px; letter-spacing:0.25em; color:#B09070; text-transform:uppercase; font-family:'Noto Sans JP',sans-serif; }
+.p2-sentence {
+  font-family:'Noto Sans JP',sans-serif; font-size:20px; font-weight:700;
+  line-height:2.4; padding:2px 0; word-break:keep-all;
+}
+.p2-zh { font-size:14px; line-height:1.6; padding:7px 11px; border-radius:6px; }
+.p2-note { border-top:2px solid; padding:8px 22px; flex-shrink:0; max-height:72px; overflow:hidden; }
+.p2-note-text { font-size:12px; line-height:1.7; font-family:'Noto Serif TC',serif; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.p2-footer { padding:9px 22px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+.p2-footer-brand { font-size:13px; color:rgba(255,255,255,0.85); letter-spacing:0.2em; font-family:'Noto Serif TC',serif; font-weight:700; }
+
+/* P4 */
+.p4-dots { position:absolute; inset:0; background-size:20px 20px; opacity:0.4; }
+.p4-header { padding:12px 18px 10px; flex-shrink:0; position:relative; overflow:hidden; }
+.p4-hd1 { position:absolute; top:-30px; right:-30px; width:110px; height:110px; border-radius:50%; background:rgba(255,255,255,0.09); }
+.p4-hd2 { position:absolute; bottom:-20px; left:10px; width:60px; height:60px; border-radius:50%; background:rgba(255,255,255,0.05); }
+.p4-header-title { font-size:17px; font-family:'Nunito',sans-serif; font-weight:900; color:#fff; letter-spacing:0.02em; position:relative; text-align:center; }
+.p4-header-sub { font-size:11px; color:rgba(255,255,255,0.88); font-family:'Nunito',sans-serif; margin-top:3px; position:relative; text-align:center; }
+.p4-body { flex:1; display:grid; grid-template-columns:1fr 1fr; gap:0; padding:7px 12px; position:relative; z-index:1; align-content:center; }
+.p4-item {
+  background:#fff; padding:7px 10px 7px; display:flex; flex-direction:column; gap:3px;
+  border:0.5px solid rgba(0,0,0,0.1);
+}
+.p4-item:nth-child(odd) { border-right:0.5px solid rgba(0,0,0,0.1); }
+.p4-item:nth-child(1), .p4-item:nth-child(2) { border-bottom:0.5px solid rgba(0,0,0,0.1); }
+.p4-item:nth-child(3), .p4-item:nth-child(4) { border-bottom:0.5px solid rgba(0,0,0,0.1); }
+.p4-item-title { font-size:13px; font-family:'Nunito',sans-serif; font-weight:800; color:#1B3A30; line-height:1.4; }
+.p4-item-mark, .p4-item-desc { display:inline-block; font-size:10.5px; font-family:'Nunito',sans-serif; font-weight:800; color:#fff; background:#D4462A; border-radius:3px; padding:3px 8px; line-height:1.5; width:fit-content; }
+.p4-badges { display:flex; flex-wrap:wrap; gap:3px; margin-top:2px; }
+.p4-badge { display:inline-block; font-size:11px; font-family:'Nunito',sans-serif; font-weight:700; border-radius:4px; padding:2px 6px; }
+.p4-badge.alt { color:#1565C0; background:#E3F2FD; }
+.p4-footer { padding:10px 20px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.p4-footer-brand { font-size:18px; color:rgba(255,255,255,0.92); font-family:'Noto Serif TC',serif; font-weight:900; letter-spacing:0.15em; }
+</style>
 </head>
 <body>
 
-<div class="card">
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-title">小狸日檢補給站</div>
+  <div class="topbar-sub">IG 四頁圖卡自動生成器</div>
+</div>
 
-    <!-- ══ HEADER ══ -->
-    <div class="card-header">
-        <div class="header-left">
-            <div class="logo-mark">✦</div>
-            <div class="title-block">
-                <div class="title-main">小狸日語 <span>SNS 編輯器</span></div>
-                <div class="title-sub">Kori Japanese · SNS Blank Editor</div>
-            </div>
-        </div>
-        <div class="ver-badge">Ver. 2.1</div>
+<!-- MODE BAR -->
+<div class="mode-bar">
+  <button class="mode-btn active" id="mode-dark" onclick="setMode('dark')">🌙 深色</button>
+  <button class="mode-btn" id="mode-light" onclick="setMode('light')">☀️ 白色</button>
+  <button class="mode-btn" id="mode-warm" onclick="setMode('warm')">🍂 暖色</button>
+</div>
+
+<!-- API KEY -->
+<div class="c-panel" id="cp-apikey">
+  <div class="c-header" onclick="togglePanel('apikey')">
+    <div class="panel-title">🔑 Gemini API 金鑰</div>
+    <span class="c-chevron" id="cv-apikey">▾</span>
+  </div>
+  <div class="c-body" id="cb-apikey">
+    <div class="key-row">
+      <input class="key-input" id="api-key" type="password" placeholder="貼入你的 Gemini API Key…" autocomplete="off">
+      <button class="key-toggle" onclick="toggleKey()">顯示</button>
+    </div>
+    <div class="key-hint">⚠️ 金鑰僅存在瀏覽器本地，不會上傳或洩漏至任何伺服器</div>
+  </div>
+</div>
+
+<!-- AI TOPIC INPUT -->
+<div class="c-panel" id="cp-ai">
+  <div class="c-header" onclick="togglePanel('ai')">
+    <div class="panel-title">✦ AI 自動生成內容</div>
+    <span class="c-chevron" id="cv-ai">▾</span>
+  </div>
+  <div class="c-body" id="cb-ai">
+    <div class="ai-row">
+      <textarea class="topic-input" id="topic-input" placeholder="輸入主題，例如：&#10;「通貨膨脹 インフレ」或「N2単語：遠慮」"></textarea>
+      <button class="btn-ai" id="btn-ai" onclick="generateFromAI()">AI<br>生成</button>
+    </div>
+    <div class="ai-hint">
+      主題格式參考：<span>N1単語：忖度 / 文法：〜にもかかわらず / N3例句：遅刻</span>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY PANEL -->
+<div class="c-panel" id="cp-history">
+  <div class="c-header" onclick="togglePanel('history')">
+    <div class="panel-title">📚 生成紀錄</div>
+    <div style="display:flex;gap:6px;align-items:center;" onclick="event.stopPropagation()">
+      <button class="history-clear-btn" onclick="clearHistory()">清除全部</button>
+      <span class="c-chevron" id="cv-history">▾</span>
+    </div>
+  </div>
+  <div class="c-body" id="cb-history">
+    <div class="history-list open" id="history-list">
+      <div class="history-empty" id="history-empty">還沒有生成紀錄</div>
+    </div>
+    <div class="history-count" id="history-count"></div>
+  </div>
+</div>
+
+<!-- SNS PANEL -->
+<div class="c-panel" id="cp-sns">
+  <div class="c-header" onclick="togglePanel('sns')">
+    <div class="panel-title">✍️ SNS 貼文文字生成</div>
+    <span class="c-chevron" id="cv-sns">▾</span>
+  </div>
+  <div class="c-body" id="cb-sns">
+    <div class="sns-nav" id="sns-nav">
+      <button class="sns-nav-arrow" id="sns-prev" onclick="snsNavStep(-1)" title="上一筆">◀</button>
+      <div class="sns-nav-info">
+        <div class="sns-nav-kw" id="sns-nav-kw">—</div>
+        <div class="sns-nav-zh" id="sns-nav-zh"></div>
+        <div class="sns-nav-pos" id="sns-nav-pos"></div>
+      </div>
+      <button class="sns-nav-arrow" id="sns-next" onclick="snsNavStep(1)" title="下一筆">▶</button>
+    </div>
+    <div class="sns-no-history" id="sns-no-history">尚無紀錄，請先用 AI 生成內容後再來這裡產生貼文</div>
+    <div class="sns-btn-row">
+      <button class="btn-sns" id="btn-sns" onclick="generateSNS()">✦ 生成貼文</button>
+      <button class="sns-copy-btn" onclick="copySNS()">📋 複製</button>
+    </div>
+    <textarea class="sns-output" id="sns-output" placeholder="貼文內容會出現在這裡…"></textarea>
+    <div class="sns-char-count" id="sns-char-count"></div>
+  </div>
+</div>
+
+<!-- CONTENT EDITOR -->
+<div class="c-panel" id="cp-editor">
+  <div class="c-header" onclick="togglePanel('editor')">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="panel-title" style="margin-bottom:0;">✏️ 內容快速編輯</div>
+      <span id="ed-indicator" style="font-size:12px;font-family:'Nunito',sans-serif;color:var(--accent);"></span>
+    </div>
+    <span class="c-chevron" id="cv-editor">▾</span>
+  </div>
+  <div class="c-body" id="cb-editor">
+    <div style="font-size:12px;font-family:'Nunito',sans-serif;opacity:0.5;margin-bottom:12px;">輸入後自動連動更新圖卡</div>
+    <div class="ed-grid">
+      <div class="ed-group">
+        <div class="ed-label">關鍵字 Keyword</div>
+        <input class="ed-input" id="ed-keyword" type="text" placeholder="例：〜にあたって" oninput="liveEditorUpdate()">
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">讀音 Ruby</div>
+        <input class="ed-input" id="ed-keyword-ruby" type="text" placeholder="例：にあたって" oninput="liveEditorUpdate()">
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">中文翻譯</div>
+        <input class="ed-input" id="ed-keyword-zh" type="text" placeholder="例：在…之際、當…之時" oninput="liveEditorUpdate()">
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">主題標籤 Theme</div>
+        <input class="ed-input" id="ed-theme" type="text" placeholder="例：N2 文法" oninput="liveEditorUpdate()">
+      </div>
+      <div class="ed-group" style="grid-column:1/-1;">
+        <div class="ed-label">同義字 Synonym</div>
+        <input class="ed-input" id="ed-synonym" type="text" placeholder="例：同義字：〜に際して" oninput="liveEditorUpdate()">
+      </div>
+      <div class="ed-sep">── 例句 1 ──</div>
+      <div class="ed-group" style="grid-column:1/-1;">
+        <div class="ed-label">日文例句（可用 {漢字|ふりがな}）</div>
+        <textarea class="ed-input ed-ta" id="ed-p2-sentence" oninput="liveEditorUpdate()"></textarea>
+      </div>
+      <div class="ed-group" style="grid-column:1/-1;">
+        <div class="ed-label">中文翻譯</div>
+        <input class="ed-input" id="ed-p2-translation" type="text" oninput="liveEditorUpdate()">
+      </div>
+      <div class="ed-group" style="grid-column:1/-1;">
+        <div class="ed-label">補充說明</div>
+        <textarea class="ed-input ed-ta" id="ed-p2-note" oninput="liveEditorUpdate()"></textarea>
+      </div>
+      <div class="ed-sep">── 例句 2 ──</div>
+      <div class="ed-group" style="grid-column:1/-1;">
+        <div class="ed-label">日文例句（可用 {漢字|ふりがな}）</div>
+        <textarea class="ed-input ed-ta" id="ed-p3-sentence" oninput="liveEditorUpdate()"></textarea>
+      </div>
+      <div class="ed-group" style="grid-column:1/-1;">
+        <div class="ed-label">中文翻譯</div>
+        <input class="ed-input" id="ed-p3-translation" type="text" oninput="liveEditorUpdate()">
+      </div>
+      <div class="ed-group" style="grid-column:1/-1;">
+        <div class="ed-label">補充說明</div>
+        <textarea class="ed-input ed-ta" id="ed-p3-note" oninput="liveEditorUpdate()"></textarea>
+      </div>
+      <div class="ed-sep">── 練習問題 ──</div>
+      <div class="ed-group" style="grid-column:1/-1;">
+        <div class="ed-label">選項 Ａ（句子）</div>
+        <textarea class="ed-input ed-ta" id="ed-quiz-a" oninput="liveEditorUpdate()"></textarea>
+      </div>
+      <div class="ed-group" style="grid-column:1/-1;">
+        <div class="ed-label">選項 Ｂ（句子）</div>
+        <textarea class="ed-input ed-ta" id="ed-quiz-b" oninput="liveEditorUpdate()"></textarea>
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">正確答案</div>
+        <select class="ed-input" id="ed-quiz-correct" onchange="liveEditorUpdate()" style="height:auto;padding:8px 10px;">
+          <option value="a">Ａ 正確</option>
+          <option value="b">Ｂ 正確</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="or-row"><div class="or-line"></div>或手動貼入 JSON<div class="or-line"></div></div>
+
+<!-- JSON -->
+<div class="c-panel" id="cp-json">
+  <div class="c-header" onclick="togglePanel('json')">
+    <div class="panel-title">📋 JSON 編輯區</div>
+    <span class="c-chevron" id="cv-json">▾</span>
+  </div>
+  <div class="c-body" id="cb-json">
+    <textarea id="json-input"></textarea>
+    <div class="ruby-hint">注音格式：<span>{漢字|ふりがな}</span>　例：<span>{物価上昇|ぶっかじょうしょう}</span>が<span>{続|つづ}</span>いて</div>
+  </div>
+</div>
+
+<!-- COLOR + TUNING -->
+<div class="c-panel" id="cp-color">
+  <div class="c-header" onclick="togglePanel('color')">
+    <div class="panel-title">🎨 配色 ＆ 微調</div>
+    <span class="c-chevron" id="cv-color">▾</span>
+  </div>
+  <div class="c-body" id="cb-color">
+    <div class="panel-title" style="margin-bottom:8px;">🎨 主題配色</div>
+    <div class="swatch-row" id="swatch-row"></div>
+    <div style="margin-top:16px;">
+    <div class="panel-title" style="margin-bottom:8px;">⚙️ 手動微調</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+
+      <div style="display:flex;align-items:center;gap:10px;">
+        <label style="font-size:13px;font-family:'Nunito',sans-serif;white-space:nowrap;min-width:80px;">假名位置</label>
+        <input type="range" id="ruby-offset" min="-30" max="30" step="1" value="1"
+          style="flex:1;" oninput="updateRubyOffset(this.value)">
+        <span id="ruby-offset-val" style="font-size:13px;font-family:'Courier New',monospace;min-width:36px;text-align:right;">1px</span>
+        <button onclick="updateRubyOffset(1);document.getElementById('ruby-offset').value=1"
+          style="font-size:11px;font-family:'Nunito',sans-serif;padding:3px 8px;border-radius:5px;border:1px solid rgba(128,180,128,0.4);background:transparent;cursor:pointer;color:var(--accent);">重置</button>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;">
+        <label style="font-size:13px;font-family:'Nunito',sans-serif;white-space:nowrap;min-width:80px;">例句字級</label>
+        <input type="range" id="sentence-size" min="14" max="26" step="1" value="20"
+          style="flex:1;" oninput="updateSentenceSize(this.value)">
+        <span id="sentence-size-val" style="font-size:13px;font-family:'Courier New',monospace;min-width:36px;text-align:right;">20px</span>
+        <button onclick="updateSentenceSize(20);document.getElementById('sentence-size').value=20"
+          style="font-size:11px;font-family:'Nunito',sans-serif;padding:3px 8px;border-radius:5px;border:1px solid rgba(128,180,128,0.4);background:transparent;cursor:pointer;color:var(--accent);">重置</button>
+      </div>
+
+    </div>
+    </div>
+  </div>
+</div>
+<div class="batch-nav" id="batch-nav">
+  <button class="nav-btn" id="nav-prev" onclick="navBatch(-1)">◀ 上一組</button>
+  <div class="nav-info" id="nav-info">第 1 組 / 1 組</div>
+  <button class="nav-btn" id="nav-next" onclick="navBatch(1)">下一組 ▶</button>
+</div>
+
+<div id="status"></div>
+<button class="btn-generate" onclick="renderCards(true)">✦ 生成四頁圖卡</button>
+<button class="btn-dl-all" id="btn-dl-all" onclick="downloadAllCards()">⬇ 一鍵下載全部 4 張</button>
+<div style="text-align:center;padding:6px 18px 0;">
+  <button onclick="resetJSON()" style="font-size:12px;font-family:'Nunito',sans-serif;background:transparent;border:1px solid rgba(200,80,80,0.35);color:rgba(200,80,80,0.7);border-radius:6px;padding:5px 14px;cursor:pointer;letter-spacing:0.05em;">
+    🗑 清除 JSON / 重置
+  </button>
+</div>
+
+<!-- OUTPUT -->
+<div id="output"></div>
+
+<!-- OFFSCREEN -->
+<div id="render-area"></div>
+
+<script>
+/* ══════════════════════════════════
+   COLOR THEMES
+══════════════════════════════════ */
+const THEMES = [
+  { name:'青綠', accent:'#2E7D6E', dark:'#1B5E53', cardBg:'#FAFBF0', dot:'#C8E6C9', exBg:'#F5FBF8', exGrid:'#B8D8C8', headerBg:'#1C3557', noteBg:'#F0FAF7', noteBorder:'#C0E0D8', noteText:'#1B5E53', zhBg:'rgba(200,235,225,0.35)', zhColor:'#1B5E53', worksBg:'#F4FAF7', wdot:'#B2DFDB', border:'#C8E6C9', badge:'#2E7D6E', badgeBg:'#E8F5E9' },
+  { name:'深藏青', accent:'#1C5480', dark:'#0F3255', cardBg:'#F5F8FC', dot:'#B8D4E8', exBg:'#EEF4FA', exGrid:'#A8C4E0', headerBg:'#0F2840', noteBg:'#EBF4FC', noteBorder:'#B0D0E8', noteText:'#0F3255', zhBg:'rgba(185,215,240,0.3)', zhColor:'#0F3255', worksBg:'#EEF5FB', wdot:'#A8C8E0', border:'#B8D4E8', badge:'#1C5480', badgeBg:'#E3EEF8' },
+  { name:'暖棕', accent:'#7B4F2E', dark:'#5A3520', cardBg:'#FDFAF5', dot:'#E8D5B8', exBg:'#FAF5EE', exGrid:'#D8C0A0', headerBg:'#3D2210', noteBg:'#FBF3E8', noteBorder:'#E0C8A0', noteText:'#5A3520', zhBg:'rgba(235,215,185,0.32)', zhColor:'#5A3520', worksBg:'#FAF5EE', wdot:'#DFC9A8', border:'#E8D5B8', badge:'#7B4F2E', badgeBg:'#F5EAD8' },
+  { name:'深紫', accent:'#5B3A8A', dark:'#3D2560', cardBg:'#FAF8FD', dot:'#D5C4F0', exBg:'#F5F0FC', exGrid:'#C0A8E0', headerBg:'#25144A', noteBg:'#F3ECFC', noteBorder:'#C8B0E8', noteText:'#3D2560', zhBg:'rgba(210,190,245,0.3)', zhColor:'#3D2560', worksBg:'#F5F0FC', wdot:'#C8B4E8', border:'#D5C4F0', badge:'#5B3A8A', badgeBg:'#EDE5F8' },
+  { name:'墨綠', accent:'#2D5A3D', dark:'#1A3D28', cardBg:'#F4FAF5', dot:'#B8D8C0', exBg:'#EEF7F0', exGrid:'#A8C8B0', headerBg:'#1A3D28', noteBg:'#E8F5EC', noteBorder:'#A8C8B0', noteText:'#1A3D28', zhBg:'rgba(180,220,190,0.32)', zhColor:'#1A3D28', worksBg:'#EEF7F0', wdot:'#A8C8B0', border:'#B8D8C0', badge:'#2D5A3D', badgeBg:'#E0F0E4' },
+  { name:'天空藍', accent:'#1A6896', dark:'#0E4A70', cardBg:'#F2F8FD', dot:'#A8CEE8', exBg:'#EAF4FA', exGrid:'#90C0DC', headerBg:'#0E4A70', noteBg:'#E0F0F8', noteBorder:'#90C0DC', noteText:'#0E4A70', zhBg:'rgba(160,210,235,0.3)', zhColor:'#0E4A70', worksBg:'#EAF4FA', wdot:'#90C0DC', border:'#A8CEE8', badge:'#1A6896', badgeBg:'#DDF0FA' },
+  { name:'玫瑰棕', accent:'#8A4A5A', dark:'#602E3C', cardBg:'#FDF8F8', dot:'#F0CBCB', exBg:'#FBF0F2', exGrid:'#E0B0B8', headerBg:'#3A1820', noteBg:'#FAEAED', noteBorder:'#E0B0B8', noteText:'#602E3C', zhBg:'rgba(240,200,210,0.3)', zhColor:'#602E3C', worksBg:'#FBF0F0', wdot:'#E8BABA', border:'#F0CBCB', badge:'#8A4A5A', badgeBg:'#F8E5E5' },
+];
+let currentTheme = 0;
+
+function applyTheme(idx) {
+  currentTheme = idx;
+  document.querySelectorAll('.swatch').forEach((s,i) => s.classList.toggle('active', i===idx));
+  localStorage.setItem('kori_theme', idx);
+}
+function buildSwatches() {
+  const row = document.getElementById('swatch-row');
+  THEMES.forEach((t, i) => {
+    const s = document.createElement('div');
+    s.className = 'swatch' + (i===currentTheme?' active':'');
+    s.style.background = t.accent;
+    s.title = t.name;
+    s.innerHTML = `<span class="swatch-check">✓</span>`;
+    s.onclick = () => applyTheme(i);
+    row.appendChild(s);
+  });
+}
+
+/* ══════════════════════════════════
+   API KEY
+══════════════════════════════════ */
+function toggleKey() {
+  const input = document.getElementById('api-key');
+  const btn = document.querySelector('.key-toggle');
+  if (input.type === 'password') { input.type='text'; btn.textContent='隱藏'; }
+  else { input.type='password'; btn.textContent='顯示'; }
+}
+function getKey() {
+  const v = document.getElementById('api-key').value.trim();
+  if (v) localStorage.setItem('kori_apikey', v);
+  return v || localStorage.getItem('kori_apikey') || '';
+}
+
+/* ══════════════════════════════════
+   HISTORY SYSTEM
+══════════════════════════════════ */
+const HISTORY_KEY = 'kori_history_v2';
+const HISTORY_MAX = 50;
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+function saveHistory(arr) {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(arr));
+}
+function addToHistory(item) {
+  const arr = loadHistory();
+  // deduplicate by keyword
+  const idx = arr.findIndex(h => h.keyword === item.keyword);
+  if (idx !== -1) arr.splice(idx, 1);
+  arr.unshift({
+    keyword: item.keyword,
+    keyword_ruby: item.keyword_ruby || '',
+    keyword_zh: item.keyword_zh || '',
+    theme: item.theme || '',
+    timestamp: Date.now(),
+    json: JSON.stringify(item)
+  });
+  if (arr.length > HISTORY_MAX) arr.length = HISTORY_MAX;
+  saveHistory(arr);
+  renderHistory();
+}
+function deleteFromHistory(keyword) {
+  const arr = loadHistory().filter(h => h.keyword !== keyword);
+  saveHistory(arr);
+  renderHistory();
+}
+function clearHistory() {
+  if (!confirm('確定要清除全部生成紀錄嗎？')) return;
+  saveHistory([]);
+  renderHistory();
+}
+function toggleHistory() {
+  const list = document.getElementById('history-list');
+  const btn = document.getElementById('history-toggle');
+  const open = list.classList.toggle('open');
+  btn.textContent = open ? '收起 ▴' : '展開 ▾';
+}
+function formatDate(ts) {
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getMonth()+1}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function renderHistory() {
+  const arr = loadHistory();
+  const list = document.getElementById('history-list');
+  const empty = document.getElementById('history-empty');
+  const count = document.getElementById('history-count');
+
+  // remove all except empty placeholder
+  list.querySelectorAll('.history-item').forEach(el => el.remove());
+  empty.style.display = arr.length ? 'none' : 'block';
+  count.textContent = arr.length ? `共 ${arr.length} 筆紀錄` : '';
+
+  arr.forEach(h => {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `
+      <div class="history-item-info">
+        <div class="history-kw">${h.keyword}</div>
+        <div class="history-zh">${h.keyword_zh}</div>
+        <div class="history-meta">${h.theme} · ${formatDate(h.timestamp)}</div>
+      </div>
+      <button class="history-load-btn">載入</button>
+      <button class="history-del-btn" title="刪除">✕</button>`;
+    div.querySelector('.history-load-btn').onclick = (e) => {
+      e.stopPropagation();
+      loadHistoryItem(h);
+    };
+    div.querySelector('.history-del-btn').onclick = (e) => {
+      e.stopPropagation();
+      deleteFromHistory(h.keyword);
+    };
+    div.onclick = () => loadHistoryItem(h);
+    list.insertBefore(div, empty);
+  });
+  updateSNSNav();
+}
+function loadHistoryItem(h) {
+  try {
+    const parsed = JSON.parse(h.json);
+    document.getElementById('json-input').value = JSON.stringify(parsed, null, 2);
+    document.getElementById('topic-input').value = `${h.theme}：${h.keyword}（${h.keyword_zh}）`;
+    batchData = [parsed];
+    batchIdx = 0;
+    updateBatchNav();
+    renderCards();
+    // sync SNS nav to this item
+    const arr = loadHistory();
+    const idx = arr.findIndex(x => x.keyword === h.keyword);
+    if (idx !== -1) snsNavIdx = idx;
+    updateSNSNav();
+    // clear SNS output so user knows they need to regenerate for this item
+    document.getElementById('sns-output').value = '';
+    document.getElementById('sns-char-count').textContent = '';
+    document.getElementById('status').scrollIntoView({ behavior:'smooth', block:'center' });
+    setStatus(`✅ 已載入：${h.keyword} ${h.keyword_zh}`);
+  } catch(e) {
+    alert('載入失敗：' + e.message);
+  }
+}
+
+/* ══════════════════════════════════
+   GEMINI AI GENERATE
+══════════════════════════════════ */
+const SYSTEM_PROMPT = `你是「小狸日語」的日語教學內容設計師。
+請根據使用者給的主題，產出一個嚴格符合以下 JSON 格式的日語教學內容。
+完全只輸出 JSON，不得包含任何說明文字或 markdown 代碼塊。
+
+JSON 格式如下：
+{
+  "theme": "N幾 頻出單字或文法",
+  "keyword": "日文關鍵字（只放關鍵字本身，不加讀音括號）",
+  "keyword_ruby": "讀音（平假名）",
+  "keyword_zh": "中文翻譯",
+  "synonym": "同義字：xxxx（ふりがな直接用括號，不要用{漢字|ふりがな}格式）",
+  "accent_color": "#2E7D6E",
+  "page2": {
+    "section": "例句",
+    "sentence": "日文例句，注音用{漢字|ふりがな}格式",
+    "translation": "中文翻譯",
+    "note": "🔗 補充說明"
+  },
+  "page3": {
+    "section": "例句",
+    "sentence": "另一個日文例句（不同情境）",
+    "translation": "中文翻譯",
+    "note": "🔗 補充說明"
+  },
+  "quiz": {
+    "sentence_a": "使用此文法的一個句子（正確或錯誤，與 b 相反）",
+    "sentence_b": "另一個句子（與 a 一正一誤）",
+    "correct": "a 或 b（填寫哪個是正確用法，每次隨機讓 a 或 b 正確，不要每次都是同一個）"
+  },
+  "works": {
+    "header_color": "#2E7D6E",
+    "items": [
+      { "title": "新日檢 N3 聽力高分合格攻略", "mark": "頻出單字句型一次給足！", "badges": ["書籍"] },
+      { "title": "小狸日語觀念文法書 暢銷新版", "desc": "打好 N5 ～ N3 文法底", "badges": ["書籍"] },
+      { "title": "日語 50 音完全自學手冊（修訂版）", "desc": "一石二鳥　聯想圖＋口訣秒記", "badges": ["書籍"] },
+      { "title": "沉浸式口說訓練影音課", "desc": "自學口語提升密技", "badges": ["影音課"] },
+      { "title": "日語口說＋聽力訓練班", "badges": ["線上課程", "跟班回看"] },
+      { "title": "N3 聽力＋文法訓練班", "badges": ["線上課程", "跟班回看"] }
+    ]
+  }
+}
+
+【注音格式嚴格規定】
+- 格式必須是 {漢字|ふりがな}，pipe 符號 | 絕對不可省略
+- 正確：{雨|あめ}　{予定|よてい}　{通|とお}り　{行|い}く
+- 錯誤：{雨あめ}　{予定|よ}{てい}　{通}{どお}り　{行い}く
+- 絕對禁止出現沒有 pipe 的單獨括號如 {む} {どお} {てい}
+- works 的 items 內容固定不變，直接照抄
+- quiz 的 sentence_a / sentence_b 一個正確一個錯誤，兩者都要是完整自然的日文句子
+- quiz correct 欄位請隨機填 "a" 或 "b"，不要固定都是同一個
+- quiz 句子可加注音，格式同 {漢字|ふりがな}`;
+
+
+async function generateFromAI() {
+  const key = getKey();
+  if (!key) { alert('請先輸入 Gemini API Key！'); return; }
+  const topic = document.getElementById('topic-input').value.trim();
+  if (!topic) { alert('請輸入主題！'); return; }
+
+  // ── Detect "N組" / "N個" in the topic ──────────────────
+  const CN = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10};
+  let batchCount = 1;
+  const m = topic.match(/([一二三四五六七八九十\d]+)\s*[組个個]/);
+  if (m) {
+    batchCount = CN[m[1]] || parseInt(m[1]) || 1;
+    batchCount = Math.min(batchCount, 10); // cap at 10
+  }
+
+  const btn = document.getElementById('btn-ai');
+  btn.disabled = true;
+
+  // collect already-generated keywords to avoid duplicates
+  const usedKw = [];
+  let successCount = 0;
+
+  for (let i = 0; i < batchCount; i++) {
+    btn.innerHTML = batchCount > 1
+      ? `生成中<br>${i+1}/${batchCount}`
+      : '生成中…';
+    setStatus(`🤖 Gemini 生成中… (${i+1} / ${batchCount})`);
+
+    // Build dedup hint
+    const dedupHint = usedKw.length
+      ? `\n\n【注意】請不要重複以下已生成的單字：${usedKw.join('、')}`
+      : '';
+
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: SYSTEM_PROMPT + '\n\n主題：' + topic + dedupHint }] }],
+            generationConfig: { temperature: 0.85, maxOutputTokens: 1500 }
+          })
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || 'API 錯誤');
+      }
+      const data = await res.json();
+      let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      text = text.replace(/```json|```/g,'').trim();
+      const newItem = JSON.parse(text);
+
+      usedKw.push(newItem.keyword);
+      addToHistory(newItem);
+      snsNavIdx = 0;
+      successCount++;
+
+      // append to batch JSON
+      let existing = [];
+      try { existing = parseBatch(document.getElementById('json-input').value); } catch(e) { existing = []; }
+      if (existing.length === 1 && !existing[0].keyword) existing = [];
+      existing.push(newItem);
+      document.getElementById('json-input').value = existing.length === 1
+        ? JSON.stringify(newItem, null, 2)
+        : JSON.stringify(existing, null, 2);
+      batchIdx = existing.length - 1;
+
+      setStatus(`✅ 已完成 ${successCount} / ${batchCount} 組…`);
+
+      // small pause between calls to avoid rate limit
+      if (i < batchCount - 1) await new Promise(r => setTimeout(r, 800));
+
+    } catch(e) {
+      setStatus(`⚠️ 第 ${i+1} 組失敗：${e.message}，繼續下一組…`);
+      await new Promise(r => setTimeout(r, 600));
+    }
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'AI<br>生成';
+  setStatus(`✅ 全部完成！成功生成 ${successCount} / ${batchCount} 組。請按生成圖卡`);
+}
+
+/* ══════════════════════════════════
+   COLLAPSIBLE PANELS
+══════════════════════════════════ */
+// Default open panels
+const PANEL_DEFAULTS = { apikey:true, ai:true, history:true, sns:false, editor:true, json:false, color:false };
+
+function togglePanel(id, forceOpen) {
+  const body = document.getElementById('cb-' + id);
+  const chev = document.getElementById('cv-' + id);
+  if (!body) return;
+  const isCollapsed = body.classList.contains('collapsed');
+  const open = forceOpen !== undefined ? forceOpen : isCollapsed;
+  if (open) {
+    body.classList.remove('collapsed');
+    body.style.maxHeight = body.scrollHeight + 200 + 'px';
+    if (chev) chev.style.transform = 'rotate(0deg)';
+  } else {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    requestAnimationFrame(() => {
+      body.classList.add('collapsed');
+      body.style.maxHeight = '0';
+      if (chev) chev.style.transform = 'rotate(-90deg)';
+    });
+  }
+  // save state
+  const states = getPanelStates();
+  states[id] = open;
+  localStorage.setItem('kori_panels', JSON.stringify(states));
+}
+
+function getPanelStates() {
+  try { return JSON.parse(localStorage.getItem('kori_panels') || '{}'); } catch(e) { return {}; }
+}
+
+function initPanels() {
+  const saved = getPanelStates();
+  Object.keys(PANEL_DEFAULTS).forEach(id => {
+    const open = id in saved ? saved[id] : PANEL_DEFAULTS[id];
+    const body = document.getElementById('cb-' + id);
+    const chev = document.getElementById('cv-' + id);
+    if (!body) return;
+    if (!open) {
+      body.classList.add('collapsed');
+      body.style.maxHeight = '0';
+      if (chev) chev.style.transform = 'rotate(-90deg)';
+    } else {
+      body.style.maxHeight = 'none';
+    }
+  });
+}
+
+/* ══════════════════════════════════
+   CONTENT EDITOR
+══════════════════════════════════ */
+function populateEditor(d) {
+  if (!d) return;
+  document.getElementById('ed-keyword').value        = d.keyword        || '';
+  document.getElementById('ed-keyword-ruby').value   = d.keyword_ruby   || '';
+  document.getElementById('ed-keyword-zh').value     = d.keyword_zh     || '';
+  document.getElementById('ed-theme').value          = d.theme          || '';
+  document.getElementById('ed-synonym').value        = d.synonym        || '';
+  document.getElementById('ed-p2-sentence').value    = d.page2?.sentence    || '';
+  document.getElementById('ed-p2-translation').value = d.page2?.translation || '';
+  document.getElementById('ed-p2-note').value        = d.page2?.note        || '';
+  document.getElementById('ed-p3-sentence').value    = d.page3?.sentence    || '';
+  document.getElementById('ed-p3-translation').value = d.page3?.translation || '';
+  document.getElementById('ed-p3-note').value        = d.page3?.note        || '';
+  const q = d.quiz || {};
+  document.getElementById('ed-quiz-a').value       = q.sentence_a || '';
+  document.getElementById('ed-quiz-b').value       = q.sentence_b || '';
+  document.getElementById('ed-quiz-correct').value = q.correct    || 'a';
+}
+
+function applyEditor() {
+  // read current batch
+  let data = [];
+  try { data = parseBatch(document.getElementById('json-input').value); } catch(e) { data = []; }
+  if (!data.length) return; // silent fail during live edit
+
+  // patch current item
+  const d = data[batchIdx] = { ...data[batchIdx] };
+  d.keyword        = document.getElementById('ed-keyword').value.trim();
+  d.keyword_ruby   = document.getElementById('ed-keyword-ruby').value.trim();
+  d.keyword_zh     = document.getElementById('ed-keyword-zh').value.trim();
+  d.theme          = document.getElementById('ed-theme').value.trim();
+  d.synonym        = document.getElementById('ed-synonym').value.trim();
+  d.page2 = { ...d.page2,
+    sentence:    document.getElementById('ed-p2-sentence').value,
+    translation: document.getElementById('ed-p2-translation').value.trim(),
+    note:        document.getElementById('ed-p2-note').value.trim(),
+  };
+  d.page3 = { ...d.page3,
+    sentence:    document.getElementById('ed-p3-sentence').value,
+    translation: document.getElementById('ed-p3-translation').value.trim(),
+    note:        document.getElementById('ed-p3-note').value.trim(),
+  };
+  d.quiz = {
+    sentence_a: document.getElementById('ed-quiz-a').value,
+    sentence_b: document.getElementById('ed-quiz-b').value,
+    correct:    document.getElementById('ed-quiz-correct').value,
+  };
+
+  // write back to JSON textarea
+  const newRaw = data.length === 1
+    ? JSON.stringify(d, null, 2)
+    : JSON.stringify(data, null, 2);
+  document.getElementById('json-input').value = newRaw;
+  localStorage.setItem('kori_batch', newRaw);
+
+  // also update history if this keyword matches
+  const hist = loadHistory();
+  const hi = hist.findIndex(h => h.keyword === d.keyword || h.keyword === data[batchIdx]?.keyword);
+  if (hi !== -1) {
+    hist[hi].json = JSON.stringify(d);
+    saveHistory(hist);
+    renderHistory();
+  }
+
+  renderCards();
+}
+
+// Debounced live update — fires 400ms after the user stops typing
+let _editorTimer = null;
+function liveEditorUpdate() {
+  const indicator = document.getElementById('ed-indicator');
+  if (indicator) { indicator.textContent = '⏳ 更新中…'; indicator.style.opacity = '0.7'; }
+  clearTimeout(_editorTimer);
+  _editorTimer = setTimeout(() => {
+    applyEditor();
+    if (indicator) { indicator.textContent = '✅ 已同步'; indicator.style.opacity = '1';
+      setTimeout(() => { indicator.textContent = ''; }, 1200); }
+  }, 400);
+}
+
+/* ══════════════════════════════════
+   MANUAL TUNING
+══════════════════════════════════ */
+let rubyOffset = 1;      // px, positive = lower
+let sentenceSize = 20;   // px
+
+function updateRubyOffset(val) {
+  rubyOffset = parseInt(val);
+  document.getElementById('ruby-offset-val').textContent = rubyOffset + 'px';
+  localStorage.setItem('kori_ruby_offset', rubyOffset);
+}
+function updateSentenceSize(val) {
+  sentenceSize = parseInt(val);
+  document.getElementById('sentence-size-val').textContent = sentenceSize + 'px';
+  localStorage.setItem('kori_sentence_size', sentenceSize);
+}
+
+/* ══════════════════════════════════
+   UTILS
+══════════════════════════════════ */
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+
+function parseRuby(text) {
+  // Remove lone {xxx} with no pipe (malformed, e.g. {む} {どお})
+  const cleaned = text.replace(/\{([^|{}]+)\}/g, '$1');
+  return cleaned.split(/(\{[^}|]+\|[^}]+\})/g).map(p => {
+    const m = p.match(/^\{([^|]+)\|([^}]+)\}$/);
+    if (!m) return p;
+    // Furigana sits directly above the kanji via negative top offset.
+    // html2canvas handles this correctly (unlike <ruby> tags).
+    return `<span style="display:inline-block;position:relative;">`
+         + `<span style="position:absolute;top:calc(-1em + ${rubyOffset}px);left:0;right:0;`
+         + `font-size:10px;font-weight:400;color:#7FA8CC;`
+         + `line-height:1;text-align:center;white-space:nowrap;">${m[2]}</span>`
+         + `${m[1]}</span>`;
+  }).join('');
+}
+
+function getTheme() { return THEMES[currentTheme]; }
+
+// Strip ruby notation → plain text only (used for keyword & synonym display)
+function stripRuby(text) {
+  return text
+    .replace(/\{([^|{}]+)\|[^{}]+\}/g, '$1')  // {漢字|ふりがな} → 漢字
+    .replace(/\{([^{}]*)\}/g, '$1')             // leftover {xxx} → xxx
+    .trim();
+}
+
+/* ══════════════════════════════════
+   CARD BUILDERS
+══════════════════════════════════ */
+function buildP1(d) {
+  const t = getTheme();
+  const ac = t.accent, dk = t.dark;
+  const syn = d.synonym.match(/^同義字/) ? d.synonym : '同義字：' + d.synonym;
+  const synClean = stripRuby(syn);
+  return `<div class="card" id="c-p1" style="background:#fff">
+    <div class="p1-dots" style="background-image:radial-gradient(${t.dot} 1.5px,transparent 1.5px);background-size:22px 22px;position:absolute;inset:0;opacity:0.4;"></div>
+    <div class="p1-top" style="background:linear-gradient(135deg,${ac},${dk})">
+      <div class="p1-d1"></div><div class="p1-d2"></div>
+      <div class="card-mark">小狸日檢補給站</div>
+    </div>
+    <div class="p1-body">
+      <span class="p1-tag" style="background:${ac}">${d.theme}</span>
+      <div class="p1-kw" style="color:${dk}">${stripRuby(d.keyword)}</div>
+      <div class="p1-zh" style="color:${dk}">${d.keyword_zh}</div>
+      <div class="p1-divider" style="background:linear-gradient(to right,${ac},${t.dot})"></div>
+      <div class="p1-synonym" style="color:${ac}">${synClean}</div>
+    </div>
+    <div class="p1-footer" style="background:linear-gradient(135deg,${ac},${dk})">
+      <div class="p1-footer-brand">小狸日語</div>
+    </div>
+  </div>`;
+}
+
+function buildExample(d, page, id) {
+  const t = getTheme();
+  const ac = t.accent, dk = t.dark;
+  const p = d[page];
+  const synShort = stripRuby(d.synonym.replace(/^同義字[：:]\s*/,'').split('（')[0]);
+  return `<div class="card" id="${id}" style="background:#fff">
+    <div class="p2-grid" style="background-image:linear-gradient(to right,${t.exGrid} 0.5px,transparent 0.5px),linear-gradient(to bottom,${t.exGrid} 0.5px,transparent 0.5px);background-size:20px 20px;opacity:0.18;position:absolute;inset:0;"></div>
+    <div class="p2-header" style="background:linear-gradient(135deg,${ac},${dk})">
+      <div class="p2-deco a"></div><div class="p2-deco b"></div>
+      <div class="ex-mark">小狸日檢補給站</div>
+      <div class="p2-kw-ruby">${d.keyword_ruby}</div>
+      <div class="p2-kw">${stripRuby(d.keyword)}</div>
+      <div class="p2-kw-zh">${d.keyword_zh}</div>
+      <div class="p2-tags">
+        <span class="p2-tag">${d.theme}</span>
+        <span class="p2-tag">同義字：${synShort}</span>
+      </div>
+    </div>
+    <div class="p2-body">
+      <div class="p2-sec">${p.section}</div>
+      <div class="p2-sentence" style="color:${dk};font-size:${sentenceSize}px">${parseRuby(p.sentence)}</div>
+      <div class="p2-zh" style="background:${t.zhBg};color:${t.zhColor}">${p.translation}</div>
+    </div>
+    <div class="p2-note" style="background:${t.noteBg};border-top-color:${t.noteBorder}">
+      <div class="p2-note-text" style="color:${t.noteText}">${p.note}</div>
+    </div>
+    <div class="p2-footer" style="background:linear-gradient(135deg,${ac},${dk})">
+      <div class="p2-footer-brand">小狸日語</div>
+    </div>
+  </div>`;
+}
+
+function buildWorks(d) {
+  const t = getTheme();
+  const ac = t.accent, dk = t.dark;
+  const items = d.works.items.map((item, idx) => {
+    const title = idx === 0 ? item.title.replace(/^(?!小狸日語)/, '小狸日語') : item.title;
+    const mark = item.mark ? `<div class="p4-item-mark">${item.mark}</div>` : '';
+    const desc = item.desc ? `<div class="p4-item-desc">${item.desc}</div>` : '';
+    const badges = (item.badges||[]).map(b => {
+      const alt = ['跟班回看','影音課'].includes(b) ? ' alt' : '';
+      return `<span class="p4-badge${alt}" style="${alt?'':'color:'+ac+';background:'+t.badgeBg}">${b}</span>`;
+    }).join('');
+    return `<div class="p4-item">
+      <div class="p4-item-title">${title}</div>
+      ${mark}${desc}
+      ${badges ? `<div class="p4-badges">${badges}</div>` : ''}
+    </div>`;
+  }).join('');
+  return `<div class="card" id="c-p4" style="background:#fff">
+    <div class="p4-dots" style="background-image:radial-gradient(${t.wdot} 1.2px,transparent 1.2px);background-size:20px 20px;position:absolute;inset:0;opacity:0.35;"></div>
+    <div class="p4-header" style="background:linear-gradient(135deg,${ac},${dk})">
+      <div class="p4-hd1"></div><div class="p4-hd2"></div>
+      <div class="p4-header-title">小狸老師線上課程與作品集</div>
+      <div class="p4-header-sub">❤️ 感謝每一位支持小狸的你</div>
+    </div>
+    <div class="p4-body">${items}</div>
+    <div class="p4-footer" style="background:linear-gradient(135deg,${ac},${dk})">
+      <div class="p4-footer-brand">小狸日語</div>
+    </div>
+  </div>`;
+}
+
+function buildQuiz(d) {
+  const t = getTheme();
+  const ac = t.accent, dk = t.dark;
+  const q = d.quiz || {};
+  const sa = q.sentence_a || '';
+  const sb = q.sentence_b || '';
+  const kw = stripRuby(d.keyword);
+  // correct field is stored but NOT rendered on card
+  return `<div class="card" id="c-p4q" style="background:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column;">
+    <!-- dot bg -->
+    <div style="position:absolute;inset:0;background-image:radial-gradient(${t.dot} 1.5px,transparent 1.5px);background-size:22px 22px;opacity:0.3;"></div>
+
+    <!-- header -->
+    <div style="background:linear-gradient(135deg,${ac},${dk});padding:14px 18px 12px;position:relative;flex-shrink:0;">
+      <div style="position:absolute;top:10px;right:14px;background:#D4462A;color:#fff;font-size:12px;font-family:'Noto Serif TC',serif;font-weight:700;padding:6px 12px;border-radius:4px;letter-spacing:0.05em;z-index:10;">小狸日檢補給站</div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.6);font-family:'Noto Sans JP',sans-serif;letter-spacing:0.2em;margin-bottom:3px;">${d.theme}</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:28px;color:#fff;line-height:1.15;padding-right:110px;">${kw}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.75);font-family:'Noto Serif TC',serif;margin-top:3px;">${d.keyword_zh}</div>
     </div>
 
-    <!-- ══ BODY ══ -->
-    <div class="card-body">
+    <!-- quiz label -->
+    <div style="padding:10px 18px 4px;position:relative;z-index:1;flex-shrink:0;">
+      <div style="display:inline-block;font-size:10px;font-family:'Nunito',sans-serif;font-weight:800;letter-spacing:0.18em;color:${ac};border:1.5px solid ${ac};border-radius:4px;padding:2px 10px;">練習問題</div>
+      <div style="font-size:13px;font-family:'Noto Serif TC',serif;color:${dk};margin-top:7px;font-weight:600;letter-spacing:0.05em;">以下哪個用法正確？</div>
+    </div>
 
-        <!-- Undo / Redo -->
-        <div class="undo-row">
-            <button class="undo-btn" onclick="undo()">↩️ 復原 Undo</button>
-            <button class="undo-btn" onclick="redo()">↪️ 重做 Redo</button>
-        </div>
+    <!-- options -->
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:4px 18px 10px;position:relative;z-index:1;">
+      <!-- option A -->
+      <div style="border:2px solid ${t.border};border-radius:12px;padding:12px 14px;background:#fff;">
+        <div style="font-size:11px;font-family:'Nunito',sans-serif;font-weight:800;color:${ac};letter-spacing:0.12em;margin-bottom:6px;">Ａ</div>
+        <div style="font-family:'Noto Sans JP',sans-serif;font-size:15px;font-weight:700;color:${dk};line-height:1.9;">${parseRuby(sa)}</div>
+      </div>
+      <!-- option B -->
+      <div style="border:2px solid ${t.border};border-radius:12px;padding:12px 14px;background:#fff;">
+        <div style="font-size:11px;font-family:'Nunito',sans-serif;font-weight:800;color:${ac};letter-spacing:0.12em;margin-bottom:6px;">Ｂ</div>
+        <div style="font-family:'Noto Sans JP',sans-serif;font-size:15px;font-weight:700;color:${dk};line-height:1.9;">${parseRuby(sb)}</div>
+      </div>
+    </div>
 
-        <!-- Label Row -->
-        <div class="label-row">
-            <div class="label-left">
-                <div class="label-dot"></div>
-                <span class="label-text">貼文內容</span>
-                <span class="label-tip">Enter=大空行 · Shift+Enter=換行</span>
-            </div>
-            <div class="label-right">
-                <span id="saveStatus" class="save-dot">已暫存</span>
-                <span id="charCounter" class="char-pill">Threads 500</span>
-            </div>
-        </div>
+    <!-- footer -->
+    <div style="background:linear-gradient(135deg,${ac},${dk});padding:9px;text-align:center;flex-shrink:0;">
+      <div style="font-size:13px;color:rgba(255,255,255,0.85);font-family:'Noto Serif TC',serif;font-weight:700;letter-spacing:0.2em;">小狸日語</div>
+    </div>
+  </div>`;
+}
 
-        <!-- Emoji Panel -->
-        <div class="emoji-panel">
-            <button class="emoji-toggle-btn" id="emojiBtn" onclick="toggleEmoji()">
-                <span class="emoji-toggle-label">😀 常用表情符號庫</span>
-                <span class="emoji-arrow">▼</span>
-            </button>
-            <div class="emoji-body" id="emojiBody">
-                <div class="emoji-row">
-                    <div class="emoji-btn" onclick="insertEmoji('👇')">👇</div>
-                    <div class="emoji-btn" onclick="insertEmoji('⬇️')">⬇️</div>
-                    <div class="emoji-btn" onclick="insertEmoji('👉')">👉</div>
-                    <div class="emoji-btn" onclick="insertEmoji('➡️')">➡️</div>
-                    <div class="emoji-btn" onclick="insertEmoji('➡︎')">➡︎</div>
-                    <div class="emoji-btn" onclick="insertEmoji('➦')">➦</div>
-                    <div class="emoji-btn" onclick="insertEmoji('➤')">➤</div>
-                    <div class="emoji-btn" onclick="insertEmoji('⤴︎')">⤴︎</div>
-                    <div class="emoji-btn" onclick="insertEmoji('⤵︎')">⤵︎</div>
-                    <div class="emoji-btn" onclick="insertEmoji('❇️')">❇️</div>
-                    <div class="emoji-btn" onclick="insertEmoji('✳️')">✳️</div>
-                </div>
-                <div class="emoji-row">
-                    <div class="emoji-btn" onclick="insertEmoji('★')">★</div>
-                    <div class="emoji-btn" onclick="insertEmoji('⭐️')">⭐️</div>
-                    <div class="emoji-btn" onclick="insertEmoji('✪')">✪</div>
-                    <div class="emoji-btn" onclick="insertEmoji('❖')">❖</div>
-                    <div class="emoji-btn" onclick="insertEmoji('♦️')">♦️</div>
-                    <div class="emoji-btn" onclick="insertEmoji('♦︎')">♦︎</div>
-                    <div class="emoji-btn" onclick="insertEmoji('🔸')">🔸</div>
-                    <div class="emoji-btn" onclick="insertEmoji('🔶')">🔶</div>
-                    <div class="emoji-btn" onclick="insertEmoji('❤️')">❤️</div>
-                    <div class="emoji-btn" onclick="insertEmoji('💚')">💚</div>
-                    <div class="emoji-btn" onclick="insertEmoji('💜')">💜</div>
-                </div>
-                <div class="emoji-row">
-                    <div class="emoji-btn" onclick="insertEmoji('💓')">💓</div>
-                    <div class="emoji-btn" onclick="insertEmoji('🥰')">🥰</div>
-                    <div class="emoji-btn" onclick="insertEmoji('😘')">😘</div>
-                    <div class="emoji-btn" onclick="insertEmoji('😂')">😂</div>
-                    <div class="emoji-btn" onclick="insertEmoji('💪')">💪</div>
-                    <div class="emoji-btn" onclick="insertEmoji('🌹')">🌹</div>
-                    <div class="emoji-btn" onclick="insertEmoji('💎')">💎</div>
-                    <div class="emoji-btn" onclick="insertEmoji('🎈')">🎈</div>
-                    <div class="emoji-btn" onclick="insertEmoji('🟥')">🟥</div>
-                    <div class="emoji-btn" onclick="insertEmoji('🟦')">🟦</div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Toolbar — horizontal scroll on mobile -->
-        <div class="toolbar-wrapper">
-            <div class="toolbar">
-                <!-- Structure -->
-                <div class="tb-group">
-                    <button class="tb-btn c-blue" onclick="insertTitlePrefix()">▍標題</button>
-                    <div class="tb-div"></div>
-                    <button class="tb-btn" onclick="toggleJapaneseQuotes()">「 」</button>
-                    <button class="tb-btn" onclick="toggleBrackets()">【 】</button>
-                    <button class="tb-btn" onclick="toggleCurlyQuotes()" style="font-family:Georgia,serif;">" "</button>
-                </div>
-                <!-- Hashtag -->
-                <div class="tb-group">
-                    <button class="tb-btn c-cyan" onclick="insertSingleHash()">#</button>
-                    <div class="tb-div"></div>
-                    <button class="tb-btn c-cyan" onclick="insertHashtags()">＃ 標籤</button>
-                </div>
-                <!-- Font -->
-                <div class="tb-group">
-                    <button class="tb-btn c-indigo" onclick="toggleStyle('bold')" style="font-family:Georgia,serif;">𝐁 粗體</button>
-                    <div class="tb-div"></div>
-                    <button class="tb-btn c-indigo" onclick="toggleStyle('italic')" style="font-family:Georgia,serif;">𝐼 斜體</button>
-                    <div class="tb-div"></div>
-                    <button class="tb-btn c-indigo" onclick="toggleStyle('mono')">𝙼 打字機</button>
-                </div>
-            </div>
-        </div>
+let batchData = [];
+let batchIdx = 0;
 
-        <!-- Editor -->
-        <div class="editor-wrap">
-            <div id="backdrop" class="editor-backdrop"></div>
-            <textarea id="mainInput" class="editor-textarea" placeholder="在此輸入文章，超過 500 字背景會變紅..."></textarea>
-        </div>
+function parseBatch(raw) {
+  const parsed = JSON.parse(raw);
+  return Array.isArray(parsed) ? parsed : [parsed];
+}
+function updateBatchNav() {
+  const nav = document.getElementById('batch-nav');
+  if (batchData.length <= 1) { nav.classList.remove('show'); return; }
+  nav.classList.add('show');
+  document.getElementById('nav-info').textContent = `第 ${batchIdx+1} 組 / ${batchData.length} 組`;
+  document.getElementById('nav-prev').disabled = batchIdx === 0;
+  document.getElementById('nav-next').disabled = batchIdx === batchData.length - 1;
+}
+function navBatch(dir) {
+  batchIdx = Math.max(0, Math.min(batchData.length - 1, batchIdx + dir));
+  updateBatchNav();
+  renderCards();
+}
 
-        <!-- Secondary Actions -->
-        <div class="action-row">
-            <button class="btn btn-outline" onclick="insertSignature()">⬇️ 插入著作簽名檔</button>
-            <button class="btn btn-icon-only" onclick="clearText()" title="清空">🗑️</button>
-        </div>
+/* ══════════════════════════════════
+   DOWNLOAD ALL CARDS
+══════════════════════════════════ */
+// Store card HTML for export
+let _exportCards = [];
 
-        <!-- CTA -->
-        <button class="btn btn-cta" onclick="convertAndCopy()">
-            ✦ 一鍵轉換　＋　複製到剪貼簿
-        </button>
+async function downloadAllCards() {
+  if (!_exportCards.length) { alert('請先生成圖卡！'); return; }
+  const btn = document.getElementById('btn-dl-all');
+  btn.disabled = true;
+  btn.textContent = '下載中，請稍候…';
 
-        <!-- Settings -->
-        <button class="settings-trigger" id="settingsBtn" onclick="toggleSettings()">
-            ⚙️ 設定簽名檔與標籤
-            <span class="s-arr">▼</span>
-        </button>
-
-        <div class="settings-body" id="settingsBody">
-            <div>
-                <label class="setting-label">著作簽名檔內容</label>
-                <textarea id="signatureInput" class="setting-textarea">
-＿＿＿＿＿＿
-
-❤️ 感謝支持❤️
-
-❇️ 聽力一本到位👉《小狸日語新日檢N3聽力高分合格攻略》
-
-✿ 要學五十音👉《日語50音完全自學手冊》
-
-✿ 要打好N5-N3的重要日語文法👉《小狸日語觀念文法書》
-
-✿ 要學習如何自學提升口語例👉Pressplay 搜尋「沈浸式日語口說訓練課」
-
-🩸 要和小狸老師每週一起提升日語口語力👉2026年真人課程ー「50音後的第一堂口說＋聽力訓練課」</textarea>
-            </div>
-            <div>
-                <label class="setting-label">常用 Hashtag</label>
-                <textarea id="hashtagInput" class="setting-textarea">
-#小狸日語 #日語學習 #日文教學 #日本語勉強 #日檢 #JLPT #N3 #N2 #N4 #N5 #日語口說 #日語文法</textarea>
-            </div>
-        </div>
-
-    </div><!-- /card-body -->
-</div><!-- /card -->
-
-<div id="toast">已轉換並複製成功！請至 SNS 平台貼上 ✅</div>
-
-<!-- ════════════════════════════════════════
-     JAVASCRIPT  (Ver 2.1 logic, full merge)
-════════════════════════════════════════ -->
-<script>
-    const mainInput      = document.getElementById('mainInput');
-    const backdrop       = document.getElementById('backdrop');
-    const signatureInput = document.getElementById('signatureInput');
-    const hashtagInput   = document.getElementById('hashtagInput');
-    const toast          = document.getElementById('toast');
-    const saveStatus     = document.getElementById('saveStatus');
-    const charCounter    = document.getElementById('charCounter');
-
-    let historyStack = [], historyIndex = -1;
-    const maxHistory = 50, MAX_CHARS = 500;
-
-    /* ── Font maps (from Ver 2.1) ── */
-    const normalMap = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    const boldMap   = "𝐀𝐁𝐂𝐃𝐄𝐅𝐆𝐇𝐈𝐉𝐊𝐋𝐌𝐍𝐎𝐏𝐐𝐑𝐒𝐓𝐔𝐕𝐖𝐗𝐘𝐙𝐚𝐛𝐜𝐝𝐞𝐟𝐠𝐡𝐢𝐣𝐤𝐥𝐦𝐧𝐨𝐩𝐪𝐫𝐬𝐭𝐮𝐯𝐰𝐱𝐲𝐳𝟎𝟏𝟐𝟑𝟒𝟓𝟔𝟕𝟖𝟗";
-    const italicMap = "𝐴𝐵𝐶𝐷𝐸𝐹𝐺𝐻𝐼𝐽𝐾𝐿𝑀𝑁𝑂𝑃𝑄𝑅𝑆𝑇𝑈𝑉𝑊𝑋𝑌𝑍𝑎𝑏𝑐𝑑𝑒𝑓𝑔ℎ𝑖𝑗𝑘𝑙𝑚𝑛𝑜𝑝𝑞𝑟𝑠𝑡𝑢𝑣𝑤𝑥𝑦𝑧0123456789";
-    const monoMap   = "𝙰𝙱𝙲𝙳𝙴𝙵𝙶𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇𝚈𝚉𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣𝟶𝟷𝟸𝟹𝟺𝟻𝟼𝟽𝟾𝟿";
-
-    /* ── Storage ── */
-    function loadFromStorage() {
-        if (localStorage.getItem('kori_draft')) mainInput.value      = localStorage.getItem('kori_draft');
-        if (localStorage.getItem('kori_sig'))   signatureInput.value = localStorage.getItem('kori_sig');
-        if (localStorage.getItem('kori_tags'))  hashtagInput.value   = localStorage.getItem('kori_tags');
-        handleInput(); saveState();
+  const ra = document.getElementById('render-area');
+  try {
+    for (let i = 0; i < _exportCards.length; i++) {
+      const { html, file } = _exportCards[i];
+      btn.textContent = `下載中 ${i+1} / ${_exportCards.length}…`;
+      ra.innerHTML = html.replace(/id="c-p\d"/g, `id="exp-card"`);
+      const expEl = ra.firstElementChild;
+      expEl.id = 'exp-card';
+      await document.fonts.ready;
+      await new Promise(r => setTimeout(r, 280));
+      const canvas = await html2canvas(expEl, {
+        scale:2, useCORS:true, allowTaint:true,
+        backgroundColor:null, logging:false,
+      });
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `kori_${file}.png`;
+      a.click();
+      // small gap so browser doesn't block multiple downloads
+      await new Promise(r => setTimeout(r, 600));
     }
+    ra.innerHTML = '';
+    setStatus(`✅ 全部 ${_exportCards.length} 張已下載完成！`);
+  } catch(e) {
+    alert('下載失敗：' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⬇ 一鍵下載全部 4 張';
+  }
+}
 
-    function saveToStorage() {
-        localStorage.setItem('kori_draft', mainInput.value);
-        localStorage.setItem('kori_sig',   signatureInput.value);
-        localStorage.setItem('kori_tags',  hashtagInput.value);
-        saveStatus.classList.add('visible');
-        setTimeout(() => saveStatus.classList.remove('visible'), 2000);
+/* ══════════════════════════════════
+   RENDER — live HTML preview + on-demand export
+══════════════════════════════════ */
+async function renderCards(autoScroll = false) {
+  const jsonRaw = document.getElementById('json-input').value.trim();
+  if (!jsonRaw) { setStatus('❌ JSON 欄位是空的，請先生成或貼入內容'); return; }
+
+  try {
+    batchData = parseBatch(jsonRaw);
+  } catch(e) {
+    setStatus('❌ JSON 格式有誤：' + e.message + '（請重新生成或修正 JSON）');
+    return;
+  }
+
+  if (!batchData.length || !batchData[0].keyword) {
+    setStatus('❌ 資料不完整，請重新生成');
+    return;
+  }
+
+  batchIdx = Math.min(batchIdx, batchData.length - 1);
+  updateBatchNav();
+  const d = batchData[batchIdx];
+
+  try { localStorage.setItem('kori_batch', jsonRaw); } catch(e) {}
+
+  const output = document.getElementById('output');
+  output.innerHTML = '';
+
+  const setName = batchData.length > 1 ? `_組${batchIdx+1}` : '';
+  const kw = (d.keyword || '').replace(/[\/\\:*?"<>|{}|]/g, '').replace(/\s+/g,'_').trim();
+
+  // Defensive: patch any missing fields so builds never throw
+  d.page2 = d.page2 || { section:'例句', sentence:'', translation:'', note:'' };
+  d.page3 = d.page3 || { section:'例句', sentence:'', translation:'', note:'' };
+  d.works = d.works || { items:[] };
+  d.works.items = d.works.items || [];
+  d.quiz = d.quiz || { sentence_a:'', sentence_b:'', correct:'a' };
+  d.synonym = d.synonym || '';
+  d.theme = d.theme || '';
+  d.keyword_ruby = d.keyword_ruby || '';
+  d.keyword_zh = d.keyword_zh || '';
+
+  let cards;
+  try {
+    cards = [
+      { html: buildP1(d),                       label:'01 · 封面',       file:`01_封面_${kw}${setName}` },
+      { html: buildExample(d,'page2','live-p2'), label:'02 · 例句',       file:`02_例句1_${kw}${setName}` },
+      { html: buildExample(d,'page3','live-p3'), label:'03 · 例句',       file:`03_例句2_${kw}${setName}` },
+      { html: buildQuiz(d),                     label:'04 · 練習問題',   file:`04_練習_${kw}${setName}` },
+      { html: buildWorks(d),                    label:'05 · 課程作品集', file:`05_作品集_${kw}${setName}` },
+    ];
+  } catch(e) {
+    setStatus('❌ 圖卡建立失敗：' + e.message + '　（第 ' + (batchIdx+1) + ' 組資料可能有問題）');
+    console.error('renderCards build error:', e);
+    return;
+  }
+
+  _exportCards = cards;
+  document.getElementById('btn-dl-all').classList.add('show');
+
+  const liveIds = ['live-p1','live-p2','live-p3','live-p4'];
+
+  try {
+    for (let i=0; i<cards.length; i++) {
+    const { html, label, file } = cards[i];
+
+    const block = document.createElement('div');
+    block.className = 'card-block';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'card-label';
+    lbl.textContent = batchData.length > 1 ? `第${batchIdx+1}組 ${label}` : label;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'card-wrapper';
+
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html.replace(/id="c-p\d"/g, `id="${liveIds[i]}"`);
+    const cardEl = tmp.firstElementChild;
+    cardEl.id = liveIds[i];
+    wrapper.appendChild(cardEl);
+
+    const scaleCard = () => {
+      const w = wrapper.offsetWidth || window.innerWidth / 2;
+      const scale = Math.min(w / 400, 1);
+      cardEl.style.transform = `scale(${scale})`;
+      cardEl.style.transformOrigin = 'top left';
+      wrapper.style.height = (400 * scale) + 'px';
+    };
+    setTimeout(scaleCard, 0);
+    window.addEventListener('resize', scaleCard);
+
+    const btn = document.createElement('button');
+    btn.className = 'dl-btn';
+    btn.textContent = '⬇ 下載此圖';
+    btn.onclick = async () => {
+      btn.disabled = true;
+      btn.textContent = '轉換中…';
+      try {
+        const ra = document.getElementById('render-area');
+        ra.innerHTML = html.replace(/id="c-p\d"/g, `id="exp-card"`);
+        const expEl = ra.firstElementChild;
+        expEl.id = 'exp-card';
+        await document.fonts.ready;
+        await new Promise(r => setTimeout(r, 300));
+        const canvas = await html2canvas(expEl, {
+          scale:2, useCORS:true, allowTaint:true, backgroundColor:null, logging:false,
+        });
+        const url = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url; a.download = `kori_${file}.png`; a.click();
+        ra.innerHTML = '';
+      } catch(e) {
+        setStatus('⚠️ 下載失敗：' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '⬇ 下載此圖';
+      }
+    };
+
+    block.appendChild(lbl);
+    block.appendChild(wrapper);
+    block.appendChild(btn);
+    output.appendChild(block);
+  }
+  } catch(e) {
+    setStatus('❌ 圖卡顯示失敗：' + e.message);
+    console.error('renderCards DOM error:', e);
+    return;
+  }
+
+  setStatus(batchData.length > 1
+    ? `✅ 第 ${batchIdx+1} 組 / 共 ${batchData.length} 組`
+    : '✅ 圖卡已生成，按各頁下載或一鍵全下載');
+
+  // Populate the visual editor with current item's data
+  populateEditor(d);
+
+  // Auto-scroll only when explicitly requested
+  if (autoScroll) {
+    setTimeout(() => {
+      output.scrollIntoView({ behavior:'smooth', block:'start' });
+    }, 150);
+  }
+}
+
+/* ══════════════════════════════════
+   DEFAULT JSON
+══════════════════════════════════ */
+const defaultJSON = {
+  "theme": "N2 · N1 頻出單字",
+  "keyword": "インフレ",
+  "keyword_ruby": "インフレーション",
+  "keyword_zh": "通貨膨脹",
+  "synonym": "同義字：物価上昇（ぶっかじょうしょう）",
+  "accent_color": "#2E7D6E",
+  "page2": {
+    "section": "例句",
+    "sentence": "インフレで{生活費|せいかつひ}が{上|あ}がっている。",
+    "translation": "因為通貨膨脹，生活費一直在漲。",
+    "note": "🔗 相反詞是「デフレ（通貨緊縮）」。N2、N1 聽力與閱讀中頻出的經濟時事單字！"
+  },
+  "page3": {
+    "section": "例句",
+    "sentence": "{物価上昇|ぶっかじょうしょう}が{続|つづ}いて、{家計|かけい}が{苦|くる}しい。",
+    "translation": "物價持續上漲，家計很吃緊。",
+    "note": "🔗「家計（かけい）」指家庭整體收支。「苦しい」在這裡形容財務上「很緊迫」的意思。"
+  },
+  "quiz": {
+    "sentence_a": "インフレで{生活費|せいかつひ}が{上|あ}がることを「デフレ」と{言|い}う。",
+    "sentence_b": "{物価|ぶっか}が{上|あ}がり{続|つづ}けることを「インフレ」と{言|い}う。",
+    "correct": "b"
+  },
+  "works": {
+    "header_color": "#2E7D6E",
+    "items": [
+      { "title": "新日檢 N3 聽力高分合格攻略", "mark": "頻出單字句型一次給足！", "badges": ["書籍"] },
+      { "title": "小狸日語觀念文法書 暢銷新版", "desc": "打好 N5 ～ N3 文法底", "badges": ["書籍"] },
+      { "title": "日語 50 音完全自學手冊（修訂版）", "desc": "一石二鳥　聯想圖＋口訣秒記", "badges": ["書籍"] },
+      { "title": "沉浸式口說訓練影音課", "desc": "自學口語提升密技", "badges": ["影音課"] },
+      { "title": "日語口說＋聽力訓練班", "badges": ["線上課程", "跟班回看"] },
+      { "title": "N3 聽力＋文法訓練班", "badges": ["線上課程", "跟班回看"] }
+    ]
+  }
+};
+
+/* ══ UI ACCENT PER MODE ══ */
+const MODE_ACCENTS = {
+  dark:  { accent:'#2E7D6E', dark:'#1B5E53' },
+  light: { accent:'#1C5480', dark:'#0F3255' },
+  warm:  { accent:'#7B4F2E', dark:'#5A3520' },
+};
+
+/* ══════════════════════════════════
+   SNS TEXT GENERATION
+══════════════════════════════════ */
+const SNS_PROMPT = `你是「小狸日語」的日語教學老師，筆名小狸老師（心怡）。
+請根據使用者給的日語主題，用台灣繁體中文，以親切、幽默、生活化的語氣，寫一篇 SNS 教學貼文。
+
+【字數硬性規定：全文含例句、翻譯、hashtag，合計不超過 200 字】
+
+格式規定（照順序）：
+1. 暖場句（1 句，15 字以內，以「朋友們」開頭）
+2. 生活情境引子（1 句，20 字以內，直接帶出今日文法）
+3. 文法說明（1 句，20 字以內）
+4. 例句（最多 2 個，每句日文 + 中文翻譯，格式：句子 → 翻譯）
+5. 結尾 hashtag（2 個，繁中＋日語）
+
+絕對禁止：粗體、星號（*）、任何 markdown 符號、多餘空行
+直接輸出貼文，不加標題或說明`;
+
+/* ══════════════════════════════════
+   SNS NAV
+══════════════════════════════════ */
+let snsNavIdx = 0; // index into history array
+
+function updateSNSNav() {
+  const arr = loadHistory();
+  const nav = document.getElementById('sns-nav');
+  const noHist = document.getElementById('sns-no-history');
+
+  if (!arr.length) {
+    nav.classList.remove('show');
+    noHist.style.display = 'block';
+    return;
+  }
+
+  nav.classList.add('show');
+  noHist.style.display = 'none';
+
+  // clamp index
+  snsNavIdx = Math.max(0, Math.min(arr.length - 1, snsNavIdx));
+  const h = arr[snsNavIdx];
+
+  document.getElementById('sns-nav-kw').textContent  = h.keyword;
+  document.getElementById('sns-nav-zh').textContent  = h.keyword_zh;
+  document.getElementById('sns-nav-pos').textContent = `第 ${snsNavIdx + 1} 筆 / 共 ${arr.length} 筆`;
+  document.getElementById('sns-prev').disabled = snsNavIdx === 0;
+  document.getElementById('sns-next').disabled = snsNavIdx === arr.length - 1;
+}
+
+function snsNavStep(dir) {
+  const arr = loadHistory();
+  snsNavIdx = Math.max(0, Math.min(arr.length - 1, snsNavIdx + dir));
+  updateSNSNav();
+  // clear previous SNS output when switching items
+  document.getElementById('sns-output').value = '';
+  document.getElementById('sns-char-count').textContent = '';
+}
+
+async function generateSNS() {
+  const key = getKey();
+  if (!key) { alert('請先輸入 Gemini API Key！'); return; }
+
+  // Prefer the selected history item; fallback to topic-input
+  const arr = loadHistory();
+  let topic = '';
+  if (arr.length) {
+    const h = arr[snsNavIdx];
+    // Build a rich topic string from the stored JSON for better SNS quality
+    try {
+      const parsed = JSON.parse(h.json);
+      topic = `${h.theme}：${h.keyword}（${h.keyword_zh}）\n` +
+              `例句1：${parsed.page2?.sentence || ''} → ${parsed.page2?.translation || ''}\n` +
+              `例句2：${parsed.page3?.sentence || ''} → ${parsed.page3?.translation || ''}`;
+    } catch(e) {
+      topic = `${h.theme}：${h.keyword}（${h.keyword_zh}）`;
     }
+  } else {
+    topic = document.getElementById('topic-input').value.trim();
+    if (!topic) { alert('請先在上方輸入主題，或先用 AI 生成一筆內容！'); return; }
+  }
 
-    /* ── Core Input Handler ── */
-    function handleInput() {
-        const text = mainInput.value;
-        updateCharCount(text); syncBackdrop(text);
-        clearTimeout(window._saveT);    window._saveT    = setTimeout(saveToStorage, 500);
-        clearTimeout(window._historyT); window._historyT = setTimeout(saveState, 500);
-    }
+  const btn = document.getElementById('btn-sns');
+  btn.disabled = true; btn.textContent = '生成中…';
+  document.getElementById('sns-output').value = '';
+  document.getElementById('sns-char-count').textContent = '';
 
-    function syncBackdrop(text) {
-        const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-        if (text.length <= MAX_CHARS) {
-            backdrop.innerHTML = esc(text).replace(/\n/g,'<br>') + '&nbsp;';
-        } else {
-            backdrop.innerHTML = esc(text.slice(0, MAX_CHARS)).replace(/\n/g,'<br>') +
-                '<mark class="danger-zone">' + esc(text.slice(MAX_CHARS)).replace(/\n/g,'<br>') + '</mark>&nbsp;';
-        }
-        backdrop.scrollTop = mainInput.scrollTop;
-    }
-
-    mainInput.addEventListener('scroll', () => { backdrop.scrollTop = mainInput.scrollTop; });
-
-    function updateCharCount(text) {
-        const rem = MAX_CHARS - text.length;
-        charCounter.classList.remove('warning','danger');
-        if (rem < 0) {
-            charCounter.textContent = `超過 ${Math.abs(rem)}`;
-            charCounter.classList.add('danger');
-        } else if (rem <= 50) {
-            charCounter.textContent = `剩餘 ${rem}`;
-            charCounter.classList.add('warning');
-        } else {
-            charCounter.textContent = `Threads ${rem}`;
-        }
-    }
-
-    window.onload = loadFromStorage;
-    mainInput.addEventListener('input', handleInput);
-    [signatureInput, hashtagInput].forEach(el =>
-        el.addEventListener('input', () => { clearTimeout(window._saveT); window._saveT = setTimeout(saveToStorage, 500); })
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+      {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({
+          contents:[{ role:'user', parts:[{ text: SNS_PROMPT + '\n\n主題資料：\n' + topic }] }],
+          generationConfig:{ temperature:0.85, maxOutputTokens:800 }
+        })
+      }
     );
+    if (!res.ok) { const e=await res.json(); throw new Error(e.error?.message||'API 錯誤'); }
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    document.getElementById('sns-output').value = text.trim();
+    const count = text.trim().length;
+    document.getElementById('sns-char-count').textContent = `共 ${count} 字`;
+    localStorage.setItem('kori_sns', text.trim());
+  } catch(e) {
+    document.getElementById('sns-output').value = '❌ 生成失敗：' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = '✦ 生成貼文';
+  }
+}
 
-    /* ── History ── */
-    function saveState() {
-        if (historyIndex < historyStack.length - 1) historyStack = historyStack.slice(0, historyIndex + 1);
-        historyStack.push(mainInput.value);
-        if (historyStack.length > maxHistory) historyStack.shift(); else historyIndex++;
-    }
-    function undo() { if (historyIndex > 0) { historyIndex--; mainInput.value = historyStack[historyIndex]; handleInput(); } }
-    function redo() { if (historyIndex < historyStack.length - 1) { historyIndex++; mainInput.value = historyStack[historyIndex]; handleInput(); } }
-    function executeAction(fn) { saveState(); fn(); handleInput(); }
+function copySNS() {
+  const text = document.getElementById('sns-output').value;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.sns-copy-btn');
+    btn.textContent = '✅ 已複製';
+    setTimeout(() => btn.textContent = '📋 複製', 1500);
+  });
+}
 
-    /* ── Keyboard ── */
-    mainInput.addEventListener('keydown', function(e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); return; }
-        if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); redo(); return; }
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const s = this.selectionStart, v = this.value, ins = e.shiftKey ? '\n' : '\n　\n';
-            this.value = v.slice(0, s) + ins + v.slice(this.selectionEnd);
-            this.selectionStart = this.selectionEnd = s + ins.length;
-            handleInput(); this.blur(); this.focus();
-        }
-    });
+function resetJSON() {
+  if (!confirm('清除 JSON 編輯區並重設為預設範例？')) return;
+  document.getElementById('json-input').value = JSON.stringify(defaultJSON, null, 2);
+  localStorage.removeItem('kori_batch');
+  batchData = [];
+  batchIdx = 0;
+  document.getElementById('batch-nav').classList.remove('show');
+  document.getElementById('btn-dl-all').classList.remove('show');
+  document.getElementById('output').innerHTML = '';
+  setStatus('✅ 已重置，請重新生成');
+}
 
-    /* ── UI Toggles ── */
-    function toggleEmoji() {
-        document.getElementById('emojiBtn').classList.toggle('open');
-        document.getElementById('emojiBody').classList.toggle('open');
-    }
-    function toggleSettings() {
-        document.getElementById('settingsBtn').classList.toggle('open');
-        document.getElementById('settingsBody').classList.toggle('open');
-    }
+/* ══ UI MODE ══ */
+function setMode(mode) {
+  document.body.setAttribute('data-mode', mode);
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('mode-' + mode).classList.add('active');
+  const ma = MODE_ACCENTS[mode];
+  document.documentElement.style.setProperty('--accent', ma.accent);
+  document.documentElement.style.setProperty('--accent-dark', ma.dark);
+  localStorage.setItem('kori_mode', mode);
+}
 
-    /* ── Insert helpers ── */
-    function insertAtCursor(text) {
-        const s = mainInput.selectionStart;
-        mainInput.setRangeText(text);
-        mainInput.selectionStart = mainInput.selectionEnd = s + text.length;
-        mainInput.focus();
-    }
+/* ══ INIT ══ */
+window.addEventListener('load', () => {
+  const savedMode = localStorage.getItem('kori_mode') || 'dark';
+  setMode(savedMode);
+  const savedTheme = parseInt(localStorage.getItem('kori_theme')||'0');
+  buildSwatches();
+  applyTheme(savedTheme);
 
-    function insertEmoji(e)     { executeAction(() => insertAtCursor(e)); }
-    function insertSingleHash() { executeAction(() => insertAtCursor('#')); }
-    function insertTitlePrefix(){ executeAction(() => insertAtCursor('▍')); }
+  const savedKey = localStorage.getItem('kori_apikey');
+  if (savedKey) document.getElementById('api-key').value = savedKey;
 
-    function insertHashtags() {
-        executeAction(() => {
-            const cur = mainInput.value, tags = hashtagInput.value;
-            mainInput.value = (cur.trim() && !cur.endsWith('\n')) ? cur + '\n\n' + tags : cur + tags;
-            mainInput.scrollTop = mainInput.scrollHeight;
-        });
-    }
+  const savedBatch = localStorage.getItem('kori_batch');
+  document.getElementById('json-input').value = savedBatch || JSON.stringify(defaultJSON, null, 2);
 
-    function insertSignature() {
-        executeAction(() => {
-            const cur = mainInput.value, sig = signatureInput.value;
-            mainInput.value = (cur.trim() && !cur.endsWith('\n')) ? cur + '\n\n' + sig : cur + sig;
-            mainInput.scrollTop = mainInput.scrollHeight;
-        });
-    }
+  const savedSNS = localStorage.getItem('kori_sns');
+  if (savedSNS) {
+    document.getElementById('sns-output').value = savedSNS;
+    document.getElementById('sns-char-count').textContent = `共 ${savedSNS.length} 字`;
+  }
 
-    /* ── Wrap toggles ── */
-    function wrapToggle(open, close) {
-        executeAction(() => {
-            const s = mainInput.selectionStart, e = mainInput.selectionEnd;
-            if (s === e) return;
-            const sel = mainInput.value.substring(s, e);
-            mainInput.setRangeText(
-                (sel.startsWith(open) && sel.endsWith(close))
-                    ? sel.slice(open.length, -close.length)
-                    : `${open}${sel}${close}`
-            );
-        });
-        mainInput.focus();
-    }
-    function toggleBrackets()       { wrapToggle('【','】'); }
-    function toggleJapaneseQuotes() { wrapToggle('「','」'); }
-    function toggleCurlyQuotes()    { wrapToggle('\u201C','\u201D'); }
+  document.getElementById('sns-output').addEventListener('input', () => {
+    const t = document.getElementById('sns-output').value;
+    document.getElementById('sns-char-count').textContent = t.length ? `共 ${t.length} 字` : '';
+    localStorage.setItem('kori_sns', t);
+  });
 
-    /* ── Smart Toggle Style (Ver 2.1 logic) ── */
-    function toggleStyle(styleType) {
-        executeAction(() => {
-            const start = mainInput.selectionStart, end = mainInput.selectionEnd;
-            if (start === end) return;
+  document.getElementById('json-input').addEventListener('input', () => {
+    localStorage.setItem('kori_batch', document.getElementById('json-input').value);
+  });
 
-            const selectedText = mainInput.value.substring(start, end);
-            const chars = Array.from(selectedText);
+  // restore tuning settings
+  const savedRubyOffset = localStorage.getItem('kori_ruby_offset');
+  if (savedRubyOffset !== null) {
+    rubyOffset = parseInt(savedRubyOffset);
+    document.getElementById('ruby-offset').value = rubyOffset;
+    document.getElementById('ruby-offset-val').textContent = rubyOffset + 'px';
+  }
+  const savedSentenceSize = localStorage.getItem('kori_sentence_size');
+  if (savedSentenceSize !== null) {
+    sentenceSize = parseInt(savedSentenceSize);
+    document.getElementById('sentence-size').value = sentenceSize;
+    document.getElementById('sentence-size-val').textContent = sentenceSize + 'px';
+  }
 
-            let targetMap = [];
-            if (styleType === 'bold')   targetMap = Array.from(boldMap);
-            if (styleType === 'italic') targetMap = Array.from(italicMap);
-            if (styleType === 'mono')   targetMap = Array.from(monoMap);
+  // init collapsible panels
+  initPanels();
 
-            const normalArr = Array.from(normalMap);
+  // render history panel
+  renderHistory();
+  updateSNSNav();
 
-            // If ANY char is already in target map → revert all to normal
-            let toStyle = true;
-            for (const char of chars) {
-                if (targetMap.includes(char)) { toStyle = false; break; }
-            }
-
-            const boldArr   = Array.from(boldMap);
-            const italicArr = Array.from(italicMap);
-            const monoArr   = Array.from(monoMap);
-
-            const newText = chars.map(char => {
-                let idx = -1;
-                if (toStyle) {
-                    // try Normal → Target
-                    idx = normalArr.indexOf(char);
-                    if (idx !== -1) return targetMap[idx] || char;
-                    // cross-convert Bold/Italic/Mono → Target
-                    idx = boldArr.indexOf(char);   if (idx !== -1) return targetMap[idx] || char;
-                    idx = italicArr.indexOf(char); if (idx !== -1) return targetMap[idx] || char;
-                    idx = monoArr.indexOf(char);   if (idx !== -1) return targetMap[idx] || char;
-                    return char;
-                } else {
-                    // revert Target → Normal
-                    idx = targetMap.indexOf(char);
-                    if (idx !== -1) return normalArr[idx] || char;
-                    return char;
-                }
-            }).join('');
-
-            mainInput.setRangeText(newText);
-        });
-    }
-
-    /* ── Clear & Convert ── */
-    function clearText() {
-        if (confirm('確定要清空目前內容嗎？')) executeAction(() => { mainInput.value = ''; });
-    }
-
-    function convertAndCopy() {
-        let text = mainInput.value;
-        if (!text) { alert('請先輸入內容喔！'); return; }
-        text = text.replace(/\n\s*\n/g, '\n　\n');
-        text = text.replace(/^ +/gm, m => '　'.repeat(m.length));
-        navigator.clipboard.writeText(text).then(showToast).catch(() => alert('複製失敗，請手動複製。'));
-    }
-
-    function showToast() {
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 3000);
-    }
+  setTimeout(renderCards, 300);
+});
 </script>
 </body>
 </html>
